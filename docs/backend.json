@@ -37,11 +37,12 @@
       "properties": {
         "fullName": { "type": "string" },
         "email": { "type": "string", "format": "email" },
+        "password": { "type": "string", "description": "Login password for the administrator" },
         "role": { "type": "string", "enum": ["Super Admin", "Clinic Staff", "HR Viewer"] },
         "status": { "type": "string", "enum": ["Active", "Inactive"] },
         "addedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["fullName", "email", "role", "status", "addedAt"]
+      "required": ["fullName", "email", "password", "role", "status", "addedAt"]
     }
   },
   "auth": {

@@ -7,42 +7,80 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Lock, User, ArrowLeft } from "lucide-react";
+import { ShieldCheck, Lock, User, ArrowLeft, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { useFirestore } from "@/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const db = useFirestore();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // Formal Super Admin credential check
-    setTimeout(() => {
+    try {
+      // 1. Check hardcoded Super Admin fallback
       if (username === "admin" && password === "password") {
         localStorage.setItem("medtrack_auth_role", "Super Admin");
         localStorage.setItem("medtrack_admin_auth", "true");
-        
         toast({
           title: "Access Granted",
-          description: "Welcome to the Super Admin Dashboard.",
+          description: "Welcome back, System Administrator.",
         });
-        
         router.push("/dashboard");
-      } else {
-        toast({
-          title: "Access Denied",
-          description: "Invalid administrator credentials.",
-          variant: "destructive",
-        });
-        setLoading(false);
+        return;
       }
-    }, 1000);
+
+      // 2. Check registered admins in Firestore
+      if (db) {
+        const adminsRef = collection(db, "admins");
+        const q = query(
+          adminsRef, 
+          where("email", "==", username), 
+          where("password", "==", password),
+          where("status", "==", "Active")
+        );
+        
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const adminData = querySnapshot.docs[0].data();
+          localStorage.setItem("medtrack_auth_role", adminData.role);
+          localStorage.setItem("medtrack_admin_auth", "true");
+          
+          toast({
+            title: "Access Granted",
+            description: `Welcome, ${adminData.fullName}.`,
+          });
+          
+          router.push("/dashboard");
+          return;
+        }
+      }
+
+      // 3. Fallback for failed attempts
+      toast({
+        title: "Access Denied",
+        description: "Invalid administrator credentials or account inactive.",
+        variant: "destructive",
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        title: "System Error",
+        description: "Could not verify credentials at this time.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -63,18 +101,19 @@ export default function LoginPage() {
               <ShieldCheck className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold font-headline text-primary tracking-tight">Super Admin Login</CardTitle>
-          <CardDescription>Restricted Area. Authorized Access Only.</CardDescription>
+          <CardTitle className="text-3xl font-bold font-headline text-primary tracking-tight">Admin Login</CardTitle>
+          <CardDescription>Secure Administrative Access</CardDescription>
         </CardHeader>
         <CardContent className="px-8 pb-8 space-y-6">
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-xs font-bold uppercase text-muted-foreground">Admin Username</Label>
+              <Label htmlFor="username" className="text-xs font-bold uppercase text-muted-foreground">Admin Email</Label>
               <div className="relative">
                 <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground/50" />
                 <Input 
                   id="username" 
-                  placeholder="Username" 
+                  type="text"
+                  placeholder="admin@callboxinc.com" 
                   className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -98,13 +137,20 @@ export default function LoginPage() {
               </div>
             </div>
             <Button type="submit" className="w-full h-12 text-md font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all mt-4" disabled={loading}>
-              {loading ? "Verifying Credentials..." : "Access Dashboard"}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verifying...
+                </>
+              ) : (
+                "Access Dashboard"
+              )}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col items-center bg-slate-50 border-t p-6">
           <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
-            By logging in, you agree to the MedTrack Security Protocols. All administrative actions are logged and audited for system integrity.
+            All administrative actions are logged and audited. Authorized personnel only.
           </p>
         </CardFooter>
       </Card>
