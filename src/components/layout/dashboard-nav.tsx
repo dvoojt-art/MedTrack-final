@@ -7,7 +7,11 @@ import {
   ClipboardList, 
   Home,
   Stethoscope,
-  UserCircle
+  UserCircle,
+  LayoutDashboard,
+  Users,
+  Lightbulb,
+  PlusCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -22,11 +26,34 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 
-const allItems = [
+const navItems = [
+  {
+    title: "Overview",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+  },
   {
     title: "Medicine Logs",
     url: "/dashboard/records",
     icon: ClipboardList,
+  },
+  {
+    title: "AI Insights",
+    url: "/dashboard/insights",
+    icon: Lightbulb,
+  },
+];
+
+const managementItems = [
+  {
+    title: "User Management",
+    url: "/dashboard/users",
+    icon: Users,
+  },
+  {
+    title: "Manual Issuance",
+    url: "/dashboard/new",
+    icon: PlusCircle,
   },
 ];
 
@@ -43,21 +70,43 @@ export function DashboardNav() {
           <div>
             <h1 className="text-lg font-bold leading-none text-primary">MedTrack</h1>
             <p className="text-xs text-muted-foreground mt-1 font-medium">
-              Admin Panel
+              Administrator
             </p>
           </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Administration</SidebarGroupLabel>
+          <SidebarGroupLabel>Core System</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {allItems.map((item) => (
+              {navItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild 
-                    isActive={pathname === item.url || pathname === "/dashboard"}
+                    isActive={pathname === item.url}
+                    tooltip={item.title}
+                  >
+                    <Link href={item.url} className="flex items-center gap-3">
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Management</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {managementItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={pathname === item.url}
                     tooltip={item.title}
                   >
                     <Link href={item.url} className="flex items-center gap-3">
@@ -74,7 +123,7 @@ export function DashboardNav() {
       <SidebarFooter className="border-t p-4">
         <div className="mb-4 px-2 py-1.5 flex items-center gap-2 text-xs text-muted-foreground">
           <UserCircle className="h-4 w-4" />
-          <span className="truncate">Public Administration</span>
+          <span className="truncate">Active Admin Portal</span>
         </div>
         <SidebarMenu>
           <SidebarMenuItem>

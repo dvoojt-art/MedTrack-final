@@ -29,6 +29,19 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "email", "age", "gender", "department", "position", "chiefComplaints", "medicineTaken", "createdAt"]
+    },
+    "AdminUser": {
+      "title": "Administrator",
+      "description": "A user with access to the MedTrack Admin Dashboard.",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["Super Admin", "Clinic Staff", "HR Viewer"] },
+        "status": { "type": "string", "enum": ["Active", "Inactive"] },
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fullName", "email", "role", "status", "addedAt"]
     }
   },
   "auth": {
@@ -38,6 +51,10 @@
     "/issuances/{issuanceId}": {
       "schema": "Issuance",
       "description": "Collection of medicine issuance records for the company clinic."
+    },
+    "/admins/{adminId}": {
+      "schema": "AdminUser",
+      "description": "Collection of authorized administrators for the clinic system."
     }
   }
 }
