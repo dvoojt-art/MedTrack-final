@@ -4,6 +4,7 @@
 import { SidebarProvider, Sidebar, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardNav } from "@/components/layout/dashboard-nav";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Toaster } from "@/components/ui/toaster";
 
 export default function DashboardLayout({
@@ -12,16 +13,25 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    // Making it accessible for anyone - removing the redirect to login
-    setIsAuthorized(true);
-  }, []);
+    // Check for demo authentication
+    const isAuth = localStorage.getItem("medtrack_admin_auth") === "true";
+    if (!isAuth) {
+      router.push("/login");
+    } else {
+      setIsAuthorized(true);
+    }
+  }, [router]);
 
   if (!isAuthorized) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm font-medium text-muted-foreground animate-pulse">Verifying Admin Access...</p>
+        </div>
       </div>
     );
   }

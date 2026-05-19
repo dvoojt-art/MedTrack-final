@@ -3,9 +3,9 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Stethoscope, ClipboardList, ShieldCheck, ArrowRight, Building2, Activity } from "lucide-react";
+import { Stethoscope, ClipboardList, ShieldCheck, ArrowRight, Building2, Activity, Info } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function WelcomePage() {
   return (
@@ -22,6 +22,17 @@ export default function WelcomePage() {
           <p className="text-muted-foreground text-lg md:text-xl max-w-xl mx-auto leading-relaxed">
             Welcome to the MedTrack Portal. A secure environment for clinic staff to log distribution and management to track inventory.
           </p>
+        </div>
+
+        {/* Demo Info Alert */}
+        <div className="w-full max-w-2xl animate-in fade-in duration-1000 delay-300">
+          <Alert className="bg-blue-50 border-blue-200 text-left">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertTitle className="text-blue-800 font-bold">Team Demo Mode</AlertTitle>
+            <AlertDescription className="text-blue-700 text-sm">
+              Use the <strong>Clinic Portal</strong> below to add entries. To view the <strong>Admin Dashboard</strong>, use the credentials: <code className="bg-blue-100 px-1 rounded text-blue-900 font-mono">admin</code> / <code className="bg-blue-100 px-1 rounded text-blue-900 font-mono">password</code>.
+            </AlertDescription>
+          </Alert>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl animate-in fade-in slide-in-from-bottom-8 duration-1000">
@@ -65,7 +76,7 @@ export default function WelcomePage() {
         <div className="flex items-center gap-6 text-muted-foreground/40 font-semibold uppercase text-xs tracking-[0.2em]">
           <span className="flex items-center gap-1"><Building2 className="h-4 w-4" /> Callbox Inc</span>
           <span className="h-1 w-1 rounded-full bg-muted-foreground/20" />
-          <span>Clinic Administration v2.0</span>
+          <span>Clinic Administration v2.1</span>
         </div>
       </main>
 
