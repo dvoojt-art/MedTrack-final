@@ -2,14 +2,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   LayoutDashboard, 
   ClipboardList, 
   Lightbulb, 
   PlusCircle, 
   LogOut,
-  Stethoscope
+  Stethoscope,
+  UserCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -23,32 +24,51 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import { useEffect, useState } from "react";
 
-const items = [
+const allItems = [
   {
     title: "Overview",
     url: "/dashboard",
     icon: LayoutDashboard,
+    roles: ["admin"],
   },
   {
     title: "Medicine Logs",
     url: "/dashboard/records",
     icon: ClipboardList,
+    roles: ["admin", "employee"],
   },
   {
     title: "AI Insights",
     url: "/dashboard/insights",
     icon: Lightbulb,
+    roles: ["admin"],
   },
   {
     title: "New Entry",
     url: "/dashboard/new",
     icon: PlusCircle,
+    roles: ["admin", "employee"],
   },
 ];
 
 export function DashboardNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRole(localStorage.getItem("medtrack_auth_role"));
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("medtrack_admin_auth");
+    localStorage.removeItem("medtrack_auth_role");
+    router.push("/login");
+  };
+
+  const filteredItems = allItems.filter(item => !role || item.roles.includes(role));
 
   return (
     <>
@@ -59,7 +79,9 @@ export function DashboardNav() {
           </div>
           <div>
             <h1 className="text-lg font-bold leading-none text-primary">MedTrack</h1>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">Admin Panel</p>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">
+              {role === 'admin' ? 'Admin Panel' : 'Staff Portal'}
+            </p>
           </div>
         </div>
       </SidebarHeader>
@@ -68,7 +90,7 @@ export function DashboardNav() {
           <SidebarGroupLabel>Main Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {filteredItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild 
@@ -87,13 +109,15 @@ export function DashboardNav() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t p-4">
+        <div className="mb-4 px-2 py-1.5 flex items-center gap-2 text-xs text-muted-foreground">
+          <UserCircle className="h-4 w-4" />
+          <span className="truncate">Logged in as {role}</span>
+        </div>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link href="/login" className="flex items-center gap-3 text-destructive hover:text-destructive">
-                <LogOut className="h-4 w-4" />
-                <span>Logout</span>
-              </Link>
+            <SidebarMenuButton onClick={handleLogout} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

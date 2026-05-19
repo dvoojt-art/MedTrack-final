@@ -4,7 +4,7 @@
 import { SidebarProvider, Sidebar, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardNav } from "@/components/layout/dashboard-nav";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Toaster } from "@/components/ui/toaster";
 
 export default function DashboardLayout({
@@ -14,16 +14,29 @@ export default function DashboardLayout({
 }) {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    // Mock authentication check
     const authStatus = localStorage.getItem("medtrack_admin_auth");
+    const role = localStorage.getItem("medtrack_auth_role");
+
     if (authStatus !== "true") {
       router.push("/login");
-    } else {
-      setIsAuthorized(true);
+      return;
     }
-  }, [router]);
+
+    // Role-based route protection
+    if (role === "employee") {
+      const restrictedPaths = ["/dashboard/insights", "/dashboard"];
+      // If employee tries to access dashboard root or insights, send them to "new entry"
+      if (restrictedPaths.includes(pathname) || pathname === "/dashboard") {
+        router.push("/dashboard/new");
+        return;
+      }
+    }
+
+    setIsAuthorized(true);
+  }, [router, pathname]);
 
   if (!isAuthorized) {
     return (
