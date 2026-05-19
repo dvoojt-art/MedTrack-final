@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,16 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+
+const DEPARTMENT_POSITIONS: Record<string, string[]> = {
+  "Sales": ["Sales Agent", "Sales Team Lead", "Sales Manager", "Account Executive"],
+  "Marketing": ["Marketing Specialist", "Social Media Manager", "Content Creator", "Marketing Manager"],
+  "Customer Support": ["Support Agent", "Support Lead", "Support Manager", "Technical Support"],
+  "IT Support": ["IT Helpdesk", "Systems Administrator", "Network Engineer", "IT Manager"],
+  "Operations": ["Operations Associate", "Operations Lead", "Operations Manager", "Data Analyst"],
+  "Human Resources": ["HR Generalist", "Recruiter", "HR Manager", "Payroll Specialist"],
+  "Quality Assurance": ["QA Analyst", "QA Lead", "QA Manager", "Compliance Officer"]
+};
 
 export default function PublicEntryPage() {
   const { toast } = useToast();
@@ -39,6 +49,11 @@ export default function PublicEntryPage() {
     { name: "", quantity: 1, dosage: "" }
   ]);
 
+  // Reset position when department changes
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, position: "" }));
+  }, [formData.department]);
+
   const addMedicine = () => {
     setMedicines([...medicines, { name: "", quantity: 1, dosage: "" }]);
   };
@@ -59,7 +74,6 @@ export default function PublicEntryPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check if all fields are filled
     const isMedicinesValid = medicines.every(m => m.name.trim() !== "" && m.dosage.trim() !== "" && m.quantity > 0);
     const isFormValid = 
       formData.name.trim() !== "" && 
@@ -105,12 +119,9 @@ export default function PublicEntryPage() {
       });
 
     setSubmittedRecord(record);
-    
-    // Trigger success animation
     setIsSuccess(true);
     setIsSubmitting(false);
 
-    // Transition to receipt after short delay
     setTimeout(() => {
       setIsSuccess(false);
       setShowReceipt(true);
@@ -237,13 +248,9 @@ export default function PublicEntryPage() {
                         <SelectValue placeholder="Select Department" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Sales">Sales</SelectItem>
-                        <SelectItem value="Marketing">Marketing</SelectItem>
-                        <SelectItem value="Customer Support">Customer Support</SelectItem>
-                        <SelectItem value="IT Support">IT Support</SelectItem>
-                        <SelectItem value="Operations">Operations</SelectItem>
-                        <SelectItem value="Human Resources">Human Resources</SelectItem>
-                        <SelectItem value="Quality Assurance">Quality Assurance</SelectItem>
+                        {Object.keys(DEPARTMENT_POSITIONS).map((dept) => (
+                          <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -251,18 +258,18 @@ export default function PublicEntryPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="position">Position</Label>
-                    <Select value={formData.position} onValueChange={(val) => setFormData({...formData, position: val})}>
+                    <Select 
+                      value={formData.position} 
+                      onValueChange={(val) => setFormData({...formData, position: val})}
+                      disabled={!formData.department}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select Position" />
+                        <SelectValue placeholder={formData.department ? "Select Position" : "Select Department First"} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Agent">Agent</SelectItem>
-                        <SelectItem value="Team Lead">Team Lead</SelectItem>
-                        <SelectItem value="Supervisor">Supervisor</SelectItem>
-                        <SelectItem value="Manager">Manager</SelectItem>
-                        <SelectItem value="Director">Director</SelectItem>
-                        <SelectItem value="Executive">Executive</SelectItem>
-                        <SelectItem value="Support Staff">Support Staff</SelectItem>
+                        {formData.department && DEPARTMENT_POSITIONS[formData.department].map((pos) => (
+                          <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
