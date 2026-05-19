@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -39,17 +38,38 @@ export default function RecordsPage() {
   }, [records, searchTerm]);
 
   const exportData = () => {
-    if (!records) return;
-    const csvContent = "data:text/csv;charset=utf-8," + 
-      "Date,Time,Name,Age,Gender,Department,Chief Complaints,Medicine\n" +
-      records.map(r => `${r.date},${r.time},${r.name},${r.age},${r.gender},${r.department},"${r.chiefComplaints}","${r.medicineTaken?.map((m: any) => m.name).join('; ')}"`).join("\n");
+    if (!records || records.length === 0) return;
     
-    const encodedUri = encodeURI(csvContent);
+    // Header row
+    const headers = ["Date", "Time", "Patient Name", "Age", "Gender", "Department", "Chief Complaints", "Medicines Issued"];
+    
+    // Map records to CSV rows, ensuring fields with commas are quoted
+    const rows = records.map(r => [
+      r.date,
+      r.time,
+      `"${r.name.replace(/"/g, '""')}"`,
+      r.age,
+      r.gender,
+      `"${r.department.replace(/"/g, '""')}"`,
+      `"${(r.chiefComplaints || "").replace(/"/g, '""')}"`,
+      `"${r.medicineTaken?.map((m: any) => `${m.name} (${m.quantity})`).join('; ')}"`
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
+    
+    // Add UTF-8 BOM for Excel compatibility
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "medtrack_export.csv");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `medtrack_records_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
+    
+    // Cleanup
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
