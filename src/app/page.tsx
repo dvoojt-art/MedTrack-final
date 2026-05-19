@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -19,8 +20,6 @@ export default function PublicEntryPage() {
   const [submittedRecord, setSubmittedRecord] = useState<InventoryRecordsInput["records"][0] | null>(null);
 
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().slice(0, 5),
     name: "",
     age: "",
     gender: "Male",
@@ -61,8 +60,15 @@ export default function PublicEntryPage() {
       return;
     }
 
+    // Capture current date and time at the moment of distribution
+    const now = new Date();
+    const date = now.toISOString().split('T')[0];
+    const time = now.toTimeString().slice(0, 5);
+
     const record: InventoryRecordsInput["records"][0] = {
       ...formData,
+      date,
+      time,
       age: parseInt(formData.age) || 0,
       medicineTaken: medicines
     };
@@ -84,8 +90,6 @@ export default function PublicEntryPage() {
           onClose={() => {
             setShowReceipt(false);
             setFormData({
-              date: new Date().toISOString().split('T')[0],
-              time: new Date().toTimeString().slice(0, 5),
               name: "",
               age: "",
               gender: "Male",
@@ -118,12 +122,12 @@ export default function PublicEntryPage() {
       <main className="max-w-4xl mx-auto p-6 md:p-10">
         <div className="mb-8">
           <h2 className="text-3xl font-bold font-headline tracking-tight text-primary">Medicine Issuance Log</h2>
-          <p className="text-muted-foreground mt-1">Please fill in the patient details and medicines distributed.</p>
+          <p className="text-muted-foreground mt-1">Please fill in the patient details. Date and time are recorded automatically.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="md:col-span-2 border-none shadow-sm">
+          <div className="grid grid-cols-1 gap-6">
+            <Card className="border-none shadow-sm">
               <CardHeader>
                 <CardTitle className="text-lg font-headline text-primary">Patient Information</CardTitle>
               </CardHeader>
@@ -193,33 +197,7 @@ export default function PublicEntryPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-none shadow-sm h-fit">
-              <CardHeader>
-                <CardTitle className="text-lg font-headline text-primary">Log Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date</Label>
-                  <Input 
-                    id="date" 
-                    type="date" 
-                    value={formData.date}
-                    onChange={(e) => setFormData({...formData, date: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="time">Time</Label>
-                  <Input 
-                    id="time" 
-                    type="time" 
-                    value={formData.time}
-                    onChange={(e) => setFormData({...formData, time: e.target.value})}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="md:col-span-3 border-none shadow-sm">
+            <Card className="border-none shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg font-headline text-primary">Medicine Taken</CardTitle>
                 <Button type="button" variant="outline" size="sm" onClick={addMedicine} className="gap-2">

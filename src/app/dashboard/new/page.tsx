@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, ArrowLeft, Send } from "lucide-react";
 import { ReceiptView } from "@/components/records/receipt-view";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import type { InventoryRecordsInput } from "@/ai/flows/automated-inventory-insight-flow";
 
@@ -22,14 +21,11 @@ export default function NewRecordPage() {
   const [submittedRecord, setSubmittedRecord] = useState<InventoryRecordsInput["records"][0] | null>(null);
 
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().slice(0, 5),
     name: "",
     age: "",
     gender: "Male",
     department: "",
     chiefComplaints: "",
-    signatureStatus: "Signed"
   });
 
   const [medicines, setMedicines] = useState([
@@ -66,8 +62,15 @@ export default function NewRecordPage() {
       return;
     }
 
+    // Automatically capture current timestamp
+    const now = new Date();
+    const date = now.toISOString().split('T')[0];
+    const time = now.toTimeString().slice(0, 5);
+
     const record: InventoryRecordsInput["records"][0] = {
       ...formData,
+      date,
+      time,
       age: parseInt(formData.age) || 0,
       medicineTaken: medicines
     };
@@ -100,13 +103,13 @@ export default function NewRecordPage() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold font-headline tracking-tight text-primary">New Issuance Log</h1>
-          <p className="text-muted-foreground mt-1">Record a new medicine distribution for a patient.</p>
+          <p className="text-muted-foreground mt-1">Record a new medicine distribution. Timestamp is captured automatically.</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="md:col-span-2 border-none shadow-sm">
+        <div className="grid grid-cols-1 gap-6">
+          <Card className="border-none shadow-sm">
             <CardHeader className="bg-white border-b">
               <CardTitle className="text-lg font-headline text-primary">Patient Information</CardTitle>
             </CardHeader>
@@ -176,44 +179,6 @@ export default function NewRecordPage() {
           </Card>
 
           <Card className="border-none shadow-sm">
-            <CardHeader className="bg-white border-b">
-              <CardTitle className="text-lg font-headline text-primary">Log Details</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
-                <Input 
-                  id="date" 
-                  type="date" 
-                  value={formData.date}
-                  onChange={(e) => setFormData({...formData, date: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="time">Time</Label>
-                <Input 
-                  id="time" 
-                  type="time" 
-                  value={formData.time}
-                  onChange={(e) => setFormData({...formData, time: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Signature Status</Label>
-                <Select value={formData.signatureStatus} onValueChange={(val) => setFormData({...formData, signatureStatus: val})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Signed">Digitally Signed</SelectItem>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="md:col-span-3 border-none shadow-sm">
             <CardHeader className="bg-white border-b flex flex-row items-center justify-between">
               <CardTitle className="text-lg font-headline text-primary">Medicine Taken</CardTitle>
               <Button type="button" variant="outline" size="sm" onClick={addMedicine} className="gap-2">
