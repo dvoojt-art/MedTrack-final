@@ -1,363 +1,80 @@
+
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Send, Stethoscope, ShieldCheck, CheckCircle2 } from "lucide-react";
-import { ReceiptView } from "@/components/records/receipt-view";
-import { useToast } from "@/hooks/use-toast";
-import { useFirestore } from "@/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { Card, CardContent } from "@/components/ui/card";
+import { Stethoscope, ClipboardList, ShieldCheck, ArrowRight, Building2, Activity } from "lucide-react";
 import Link from "next/link";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
+import Image from "next/image";
 
-const DEPARTMENT_POSITIONS: Record<string, string[]> = {
-  "Sales": ["Sales Agent", "Sales Team Lead", "Sales Manager", "Account Executive"],
-  "Marketing": ["Marketing Specialist", "Social Media Manager", "Content Creator", "Marketing Manager"],
-  "Customer Support": ["Support Agent", "Support Lead", "Support Manager", "Technical Support"],
-  "IT Support": ["IT Helpdesk", "Systems Administrator", "Network Engineer", "IT Manager"],
-  "Operations": ["Operations Associate", "Operations Lead", "Operations Manager", "Data Analyst"],
-  "Human Resources": ["HR Generalist", "Recruiter", "HR Manager", "Payroll Specialist"],
-  "Quality Assurance": ["QA Analyst", "QA Lead", "QA Manager", "Compliance Officer"]
-};
-
-export default function PublicEntryPage() {
-  const { toast } = useToast();
-  const db = useFirestore();
-  const [showReceipt, setShowReceipt] = useState(false);
-  const [submittedRecord, setSubmittedRecord] = useState<any | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    age: "",
-    gender: "Male",
-    department: "",
-    position: "",
-    chiefComplaints: "",
-  });
-
-  const [medicines, setMedicines] = useState([
-    { name: "", quantity: 1, dosage: "" }
-  ]);
-
-  // Reset position when department changes
-  useEffect(() => {
-    setFormData(prev => ({ ...prev, position: "" }));
-  }, [formData.department]);
-
-  const addMedicine = () => {
-    setMedicines([...medicines, { name: "", quantity: 1, dosage: "" }]);
-  };
-
-  const removeMedicine = (index: number) => {
-    if (medicines.length === 1) return;
-    const newMedicines = [...medicines];
-    newMedicines.splice(index, 1);
-    setMedicines(newMedicines);
-  };
-
-  const updateMedicine = (index: number, field: string, value: string | number) => {
-    const newMedicines = [...medicines];
-    newMedicines[index] = { ...newMedicines[index], [field]: value };
-    setMedicines(newMedicines);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const isMedicinesValid = medicines.every(m => m.name.trim() !== "" && m.dosage.trim() !== "" && m.quantity > 0);
-    const isFormValid = 
-      formData.name.trim() !== "" && 
-      formData.email.trim() !== "" && 
-      formData.age.trim() !== "" && 
-      formData.department !== "" && 
-      formData.position !== "" && 
-      formData.chiefComplaints.trim() !== "";
-
-    if (!isFormValid || !isMedicinesValid) {
-      toast({
-        title: "Incomplete Form",
-        description: "All fields are required. Please ensure employee details and medicine information are complete.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!db) return;
-    setIsSubmitting(true);
-
-    const now = new Date();
-    const date = now.toISOString().split('T')[0];
-    const time = now.toTimeString().slice(0, 5);
-
-    const record = {
-      ...formData,
-      date,
-      time,
-      age: parseInt(formData.age) || 0,
-      medicineTaken: medicines,
-      createdAt: serverTimestamp(),
-    };
-
-    addDoc(collection(db, "issuances"), record)
-      .catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
-          path: "issuances",
-          operation: "create",
-          requestResourceData: record,
-        });
-        errorEmitter.emit("permission-error", permissionError);
-      });
-
-    setSubmittedRecord(record);
-    setIsSuccess(true);
-    setIsSubmitting(false);
-
-    setTimeout(() => {
-      setIsSuccess(false);
-      setShowReceipt(true);
-      toast({
-        title: "Log Recorded",
-        description: "Medicine issuance has been successfully logged.",
-      });
-    }, 1200);
-  };
-
-  if (showReceipt && submittedRecord) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-4 animate-in fade-in zoom-in-95 duration-500">
-        <ReceiptView 
-          record={submittedRecord} 
-          onClose={() => {
-            setShowReceipt(false);
-            setFormData({
-              name: "",
-              email: "",
-              age: "",
-              gender: "Male",
-              department: "",
-              position: "",
-              chiefComplaints: "",
-            });
-            setMedicines([{ name: "", quantity: 1, dosage: "" }]);
-          }} 
-        />
-      </div>
-    );
-  }
-
+export default function WelcomePage() {
   return (
-    <div className="min-h-screen bg-slate-50 relative">
-      {isSuccess && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white p-8 rounded-full shadow-2xl border border-accent/20 animate-in zoom-in-50 duration-500">
-            <CheckCircle2 className="h-20 w-20 text-accent animate-bounce" />
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      {/* Hero Section */}
+      <main className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-12">
+        <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-4">
+            <Activity className="h-3 w-3" /> Callbox Corporate Health
           </div>
-          <p className="mt-4 text-xl font-bold text-primary animate-pulse">Record Logged!</p>
-        </div>
-      )}
-
-      <header className="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 bg-primary rounded flex items-center justify-center text-white">
-            <Stethoscope className="h-5 w-5" />
-          </div>
-          <h1 className="text-xl font-bold text-primary font-headline">Callbox Clinic Portal</h1>
-        </div>
-        <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary">
-          <Link href="/login" className="gap-2">
-            <ShieldCheck className="h-4 w-4" /> Admin Access
-          </Link>
-        </Button>
-      </header>
-
-      <main className="max-w-4xl mx-auto p-6 md:p-10">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold font-headline tracking-tight text-primary">Medicine Issuance Log</h2>
-          <p className="text-muted-foreground mt-1">Please fill in all employee details. All fields are mandatory.</p>
+          <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tighter text-primary max-w-2xl leading-tight">
+            Efficient Medicine <span className="text-accent">Tracking</span> for Your Team.
+          </h1>
+          <p className="text-muted-foreground text-lg md:text-xl max-w-xl mx-auto leading-relaxed">
+            Welcome to the MedTrack Portal. A secure environment for clinic staff to log distribution and management to track inventory.
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 gap-6">
-            <Card className="border-none shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg font-headline text-primary">Employee Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      <Input 
-                        id="name" 
-                        placeholder="Enter full name" 
-                        value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Work Email</Label>
-                      <Input 
-                        id="email" 
-                        type="email"
-                        placeholder="employee@callboxinc.com" 
-                        value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="age">Age</Label>
-                      <Input 
-                        id="age" 
-                        type="number" 
-                        placeholder="Years" 
-                        value={formData.age}
-                        onChange={(e) => setFormData({...formData, age: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="gender">Gender</Label>
-                      <Select value={formData.gender} onValueChange={(val) => setFormData({...formData, gender: val})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Gender" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Male">Male</SelectItem>
-                          <SelectItem value="Female">Female</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl animate-in fade-in slide-in-from-bottom-8 duration-1000">
+          <Card className="group hover:shadow-xl transition-all border-none overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-1 h-full bg-accent" />
+            <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
+              <div className="h-16 w-16 bg-accent/10 rounded-2xl flex items-center justify-center text-accent group-hover:scale-110 transition-transform">
+                <Stethoscope className="h-8 w-8" />
+              </div>
+              <h3 className="text-2xl font-bold font-headline">Clinic Portal</h3>
+              <p className="text-muted-foreground text-sm">
+                Log new medicine distributions for employees. Access the digital receipt generator instantly.
+              </p>
+              <Button asChild className="w-full bg-accent hover:bg-accent/90 mt-4 gap-2">
+                <Link href="/portal">
+                  Employee Entry Portal <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
 
-                <div className="pt-4 border-t space-y-4">
-                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Employment Details</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="department">Department</Label>
-                      <Select value={formData.department} onValueChange={(val) => setFormData({...formData, department: val})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Department" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.keys(DEPARTMENT_POSITIONS).map((dept) => (
-                            <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="position">Position</Label>
-                      <Select 
-                        value={formData.position} 
-                        onValueChange={(val) => setFormData({...formData, position: val})}
-                        disabled={!formData.department}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={formData.department ? "Select Position" : "Select Department First"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {formData.department && DEPARTMENT_POSITIONS[formData.department].map((pos) => (
-                            <SelectItem key={pos} value={pos}>{pos}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
+          <Card className="group hover:shadow-xl transition-all border-none overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+            <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
+              <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                <ShieldCheck className="h-8 w-8" />
+              </div>
+              <h3 className="text-2xl font-bold font-headline">Admin Dashboard</h3>
+              <p className="text-muted-foreground text-sm">
+                Review distribution logs, generate CSV reports, and gain AI-powered inventory insights.
+              </p>
+              <Button asChild className="w-full bg-primary hover:bg-primary/90 mt-4 gap-2">
+                <Link href="/dashboard">
+                  Access Administration <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
 
-                <div className="pt-4 border-t space-y-2">
-                  <Label htmlFor="complaints">Symptoms / Chief Complaints</Label>
-                  <Textarea 
-                    id="complaints" 
-                    placeholder="Describe symptoms briefly..." 
-                    className="min-h-[80px]"
-                    value={formData.chiefComplaints}
-                    onChange={(e) => setFormData({...formData, chiefComplaints: e.target.value})}
-                    required
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-none shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg font-headline text-primary">Medicine Taken</CardTitle>
-                <Button type="button" variant="outline" size="sm" onClick={addMedicine} className="gap-2">
-                  <Plus className="h-4 w-4" /> Add Item
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {medicines.map((med, index) => (
-                  <div key={index} className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-slate-50 relative animate-in fade-in duration-300">
-                    <div className="sm:col-span-2 space-y-2">
-                      <Label>Medicine Name</Label>
-                      <Input 
-                        placeholder="e.g. Paracetamol" 
-                        value={med.name}
-                        onChange={(e) => updateMedicine(index, 'name', e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Quantity</Label>
-                      <Input 
-                        type="number" 
-                        value={med.quantity}
-                        min={1}
-                        onChange={(e) => updateMedicine(index, 'quantity', parseInt(e.target.value))}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Dosage</Label>
-                      <div className="flex gap-2">
-                        <Input 
-                          placeholder="e.g. 500mg" 
-                          value={med.dosage}
-                          onChange={(e) => updateMedicine(index, 'dosage', e.target.value)}
-                          required
-                        />
-                        {medicines.length > 1 && (
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="icon" 
-                            className="text-destructive shrink-0"
-                            onClick={() => removeMedicine(index)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="flex justify-end pt-4">
-            <Button type="submit" size="lg" className="bg-primary gap-2 min-w-[220px]" disabled={isSubmitting || isSuccess}>
-              <Send className="h-4 w-4" /> {isSubmitting ? "Recording..." : "Record Distribution"}
-            </Button>
-          </div>
-        </form>
+        <div className="flex items-center gap-6 text-muted-foreground/40 font-semibold uppercase text-xs tracking-[0.2em]">
+          <span className="flex items-center gap-1"><Building2 className="h-4 w-4" /> Callbox Inc</span>
+          <span className="h-1 w-1 rounded-full bg-muted-foreground/20" />
+          <span>Clinic Administration v2.0</span>
+        </div>
       </main>
+
+      {/* Footer */}
+      <footer className="p-6 text-center border-t bg-white">
+        <p className="text-xs text-muted-foreground">
+          &copy; {new Date().getFullYear()} MedTrack System. Secure Digital Clinical Records.
+        </p>
+      </footer>
     </div>
   );
 }
