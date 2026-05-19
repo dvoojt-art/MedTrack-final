@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -31,6 +32,7 @@ export default function NewRecordPage() {
     age: "",
     gender: "Male",
     department: "",
+    position: "",
     chiefComplaints: "",
   });
 
@@ -65,6 +67,7 @@ export default function NewRecordPage() {
       formData.email.trim() !== "" && 
       formData.age.trim() !== "" && 
       formData.department !== "" && 
+      formData.position !== "" && 
       formData.chiefComplaints.trim() !== "";
 
     if (!isFormValid || !isMedicinesValid) {
@@ -219,6 +222,25 @@ export default function NewRecordPage() {
                       <SelectItem value="Operations">Operations</SelectItem>
                       <SelectItem value="Human Resources">Human Resources</SelectItem>
                       <SelectItem value="Quality Assurance">Quality Assurance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="position">Position</Label>
+                  <Select value={formData.position} onValueChange={(val) => setFormData({...formData, position: val})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Position" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Agent">Agent</SelectItem>
+                      <SelectItem value="Team Lead">Team Lead</SelectItem>
+                      <SelectItem value="Supervisor">Supervisor</SelectItem>
+                      <SelectItem value="Manager">Manager</SelectItem>
+                      <SelectItem value="Director">Director</SelectItem>
+                      <SelectItem value="Executive">Executive</SelectItem>
+                      <SelectItem value="Support Staff">Support Staff</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

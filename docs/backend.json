@@ -11,6 +11,7 @@
         "age": { "type": "number", "description": "Employee age" },
         "gender": { "type": "string", "description": "Employee gender" },
         "department": { "type": "string", "description": "BPO Department (e.g., Sales, Operations, IT)" },
+        "position": { "type": "string", "description": "Employee position or role" },
         "chiefComplaints": { "type": "string", "description": "Symptoms or complaints" },
         "date": { "type": "string", "format": "date", "description": "Date of issuance (YYYY-MM-DD)" },
         "time": { "type": "string", "description": "Time of issuance (HH:MM)" },
@@ -27,7 +28,7 @@
         },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "email", "age", "gender", "department", "chiefComplaints", "medicineTaken", "createdAt"]
+      "required": ["name", "email", "age", "gender", "department", "position", "chiefComplaints", "medicineTaken", "createdAt"]
     }
   },
   "auth": {

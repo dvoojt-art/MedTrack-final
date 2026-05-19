@@ -13,6 +13,7 @@ interface ReceiptViewProps {
     name: string;
     email: string;
     department: string;
+    position: string;
     chiefComplaints: string;
     medicineTaken: Array<{
       name: string;
@@ -43,10 +44,12 @@ export function ReceiptView({ record, onClose }: ReceiptViewProps) {
           <span className="font-medium text-right">{record.time}</span>
           <span className="text-muted-foreground">Patient:</span>
           <span className="font-medium text-right">{record.name}</span>
-          <span className="text-muted-foreground">Email:</span>
-          <span className="font-medium text-right text-xs truncate ml-2" title={record.email}>{record.email}</span>
+          <span className="text-muted-foreground">Position:</span>
+          <span className="font-medium text-right">{record.position}</span>
           <span className="text-muted-foreground">Dept:</span>
           <span className="font-medium text-right">{record.department}</span>
+          <span className="text-muted-foreground">Email:</span>
+          <span className="font-medium text-right text-xs truncate ml-2" title={record.email}>{record.email}</span>
         </div>
         
         <div className="space-y-2">
