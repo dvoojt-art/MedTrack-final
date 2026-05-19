@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -160,7 +159,7 @@ export default function NewRecordPage() {
             <CardContent className="p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name *</Label>
+                  <Label htmlFor="name">Full Name</Label>
                   <Input 
                     id="name" 
                     placeholder="Enter full name" 
@@ -170,7 +169,7 @@ export default function NewRecordPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Work Email *</Label>
+                  <Label htmlFor="email">Work Email</Label>
                   <Input 
                     id="email" 
                     type="email"
@@ -183,7 +182,7 @@ export default function NewRecordPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="age">Age *</Label>
+                  <Label htmlFor="age">Age</Label>
                   <Input 
                     id="age" 
                     type="number" 
@@ -194,7 +193,7 @@ export default function NewRecordPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="gender">Gender *</Label>
+                  <Label htmlFor="gender">Gender</Label>
                   <Select value={formData.gender} onValueChange={(val) => setFormData({...formData, gender: val})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Gender" />
@@ -207,7 +206,7 @@ export default function NewRecordPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="department">Department *</Label>
+                  <Label htmlFor="department">Department</Label>
                   <Select value={formData.department} onValueChange={(val) => setFormData({...formData, department: val})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select Department" />
@@ -225,7 +224,7 @@ export default function NewRecordPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="complaints">Chief Complaints *</Label>
+                <Label htmlFor="complaints">Chief Complaints</Label>
                 <Textarea 
                   id="complaints" 
                   placeholder="Describe symptoms briefly..." 
@@ -250,7 +249,7 @@ export default function NewRecordPage() {
                 {medicines.map((med, index) => (
                   <div key={index} className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-slate-50 relative animate-in fade-in duration-300">
                     <div className="sm:col-span-2 space-y-2">
-                      <Label>Medicine Name *</Label>
+                      <Label>Medicine Name</Label>
                       <Input 
                         placeholder="e.g. Paracetamol" 
                         value={med.name}
@@ -259,7 +258,7 @@ export default function NewRecordPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Quantity *</Label>
+                      <Label>Quantity</Label>
                       <Input 
                         type="number" 
                         value={med.quantity}
@@ -269,7 +268,7 @@ export default function NewRecordPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Dosage *</Label>
+                      <Label>Dosage</Label>
                       <div className="flex gap-2">
                         <Input 
                           placeholder="e.g. 500mg" 
