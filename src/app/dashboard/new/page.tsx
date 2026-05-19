@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, ArrowLeft, Send } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Send, CheckCircle2 } from "lucide-react";
 import { ReceiptView } from "@/components/records/receipt-view";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore } from "@/firebase";
@@ -24,6 +24,7 @@ export default function NewRecordPage() {
   const [showReceipt, setShowReceipt] = useState(false);
   const [submittedRecord, setSubmittedRecord] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -82,7 +83,6 @@ export default function NewRecordPage() {
       createdAt: serverTimestamp(),
     };
 
-    // Non-blocking write for Admin dashboard as well
     addDoc(collection(db, "issuances"), record)
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
@@ -94,13 +94,19 @@ export default function NewRecordPage() {
       });
 
     setSubmittedRecord(record);
-    setShowReceipt(true);
     
-    toast({
-      title: "Success",
-      description: "Medicine issuance record has been successfully logged.",
-    });
+    // Trigger animation
+    setIsSuccess(true);
     setIsSubmitting(false);
+
+    setTimeout(() => {
+      setIsSuccess(false);
+      setShowReceipt(true);
+      toast({
+        title: "Success",
+        description: "Medicine issuance record has been successfully logged.",
+      });
+    }, 1200);
   };
 
   if (showReceipt && submittedRecord) {
@@ -115,7 +121,16 @@ export default function NewRecordPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+      {isSuccess && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white p-8 rounded-full shadow-2xl border border-accent/20 animate-in zoom-in-50 duration-500">
+            <CheckCircle2 className="h-16 w-16 text-accent animate-bounce" />
+          </div>
+          <p className="mt-4 text-lg font-bold text-primary">Record Logged!</p>
+        </div>
+      )}
+
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />
@@ -253,7 +268,7 @@ export default function NewRecordPage() {
         </div>
 
         <div className="flex justify-end mt-8">
-          <Button type="submit" size="lg" className="bg-primary gap-2 min-w-[200px]" disabled={isSubmitting}>
+          <Button type="submit" size="lg" className="bg-primary gap-2 min-w-[200px]" disabled={isSubmitting || isSuccess}>
             <Send className="h-4 w-4" /> {isSubmitting ? "Recording..." : "Submit & Generate Receipt"}
           </Button>
         </div>

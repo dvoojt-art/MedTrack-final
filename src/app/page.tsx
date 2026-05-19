@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Send, Stethoscope, ShieldCheck } from "lucide-react";
+import { Plus, Trash2, Send, Stethoscope, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { ReceiptView } from "@/components/records/receipt-view";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore } from "@/firebase";
@@ -23,6 +23,7 @@ export default function PublicEntryPage() {
   const [showReceipt, setShowReceipt] = useState(false);
   const [submittedRecord, setSubmittedRecord] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -81,7 +82,6 @@ export default function PublicEntryPage() {
       createdAt: serverTimestamp(),
     };
 
-    // Non-blocking write: Initiate save and move on immediately
     addDoc(collection(db, "issuances"), record)
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
@@ -92,19 +92,26 @@ export default function PublicEntryPage() {
         errorEmitter.emit("permission-error", permissionError);
       });
 
-    // Immediate feedback for faster UX
     setSubmittedRecord(record);
-    setShowReceipt(true);
-    toast({
-      title: "Log Recorded",
-      description: "Medicine issuance has been successfully logged.",
-    });
+    
+    // Trigger success animation
+    setIsSuccess(true);
     setIsSubmitting(false);
+
+    // Transition to receipt after short delay
+    setTimeout(() => {
+      setIsSuccess(false);
+      setShowReceipt(true);
+      toast({
+        title: "Log Recorded",
+        description: "Medicine issuance has been successfully logged.",
+      });
+    }, 1200);
   };
 
   if (showReceipt && submittedRecord) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-4">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-4 animate-in fade-in zoom-in-95 duration-500">
         <ReceiptView 
           record={submittedRecord} 
           onClose={() => {
@@ -124,7 +131,16 @@ export default function PublicEntryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 relative">
+      {isSuccess && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white p-8 rounded-full shadow-2xl border border-accent/20 animate-in zoom-in-50 duration-500">
+            <CheckCircle2 className="h-20 w-20 text-accent animate-bounce" />
+          </div>
+          <p className="mt-4 text-xl font-bold text-primary animate-pulse">Record Logged!</p>
+        </div>
+      )}
+
       <header className="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 bg-primary rounded flex items-center justify-center text-white">
@@ -273,7 +289,7 @@ export default function PublicEntryPage() {
           </div>
 
           <div className="flex justify-end pt-4">
-            <Button type="submit" size="lg" className="bg-primary gap-2 min-w-[220px]" disabled={isSubmitting}>
+            <Button type="submit" size="lg" className="bg-primary gap-2 min-w-[220px]" disabled={isSubmitting || isSuccess}>
               <Send className="h-4 w-4" /> {isSubmitting ? "Recording..." : "Record Distribution"}
             </Button>
           </div>
