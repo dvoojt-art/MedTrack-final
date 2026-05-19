@@ -29,9 +29,6 @@ const InventoryRecordSchema = z.object({
       })
     )
     .describe('List of medicines issued to the patient.'),
-  signatureStatus: z
-    .string()
-    .describe('Status of patient signature (e.g., "Signed", "Pending").'),
 });
 
 const InventoryRecordsInputSchema = z.object({

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -14,9 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Download, Plus, Search, Filter } from "lucide-react";
+import { Download, Search, Filter } from "lucide-react";
 import { INITIAL_RECORDS } from "@/lib/mock-data";
-import Link from "next/link";
 
 export default function RecordsPage() {
   const [records, setRecords] = useState(INITIAL_RECORDS);
@@ -30,8 +28,8 @@ export default function RecordsPage() {
 
   const exportData = () => {
     const csvContent = "data:text/csv;charset=utf-8," + 
-      "Date,Time,Name,Age,Gender,Department,Chief Complaints,Medicine,Signature\n" +
-      records.map(r => `${r.date},${r.time},${r.name},${r.age},${r.gender},${r.department},"${r.chiefComplaints}","${r.medicineTaken.map(m => m.name).join('; ')}",${r.signatureStatus}`).join("\n");
+      "Date,Time,Name,Age,Gender,Department,Chief Complaints,Medicine\n" +
+      records.map(r => `${r.date},${r.time},${r.name},${r.age},${r.gender},${r.department},"${r.chiefComplaints}","${r.medicineTaken.map(m => m.name).join('; ')}"`).join("\n");
     
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -51,11 +49,6 @@ export default function RecordsPage() {
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={exportData} className="gap-2">
             <Download className="h-4 w-4" /> Export CSV
-          </Button>
-          <Button size="sm" asChild className="gap-2 bg-primary">
-            <Link href="/dashboard/new">
-              <Plus className="h-4 w-4" /> New Entry
-            </Link>
           </Button>
         </div>
       </div>
@@ -90,7 +83,6 @@ export default function RecordsPage() {
                   <TableHead className="font-bold text-primary">Department</TableHead>
                   <TableHead className="max-w-[200px] font-bold text-primary">Chief Complaints</TableHead>
                   <TableHead className="font-bold text-primary">Medicines Issued</TableHead>
-                  <TableHead className="font-bold text-primary">Signature</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -98,7 +90,7 @@ export default function RecordsPage() {
                   filteredRecords.map((record, index) => (
                     <TableRow 
                       key={index} 
-                      className="hover:bg-primary/5 transition-colors cursor-default group"
+                      className="hover:bg-primary/5 transition-colors cursor-default"
                     >
                       <TableCell className="font-medium whitespace-nowrap">{record.date}</TableCell>
                       <TableCell className="text-muted-foreground whitespace-nowrap">{record.time}</TableCell>
@@ -122,19 +114,11 @@ export default function RecordsPage() {
                           ))}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={record.signatureStatus === "Signed" ? "default" : "outline"}
-                          className={record.signatureStatus === "Signed" ? "bg-accent hover:bg-accent" : "text-destructive border-destructive"}
-                        >
-                          {record.signatureStatus}
-                        </Badge>
-                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={9} className="h-48 text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="h-48 text-center text-muted-foreground">
                       No records found matching your search.
                     </TableCell>
                   </TableRow>

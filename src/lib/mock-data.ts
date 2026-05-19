@@ -1,4 +1,3 @@
-
 import { InventoryRecordsInput } from "@/ai/flows/automated-inventory-insight-flow";
 
 export const INITIAL_RECORDS: InventoryRecordsInput["records"] = [
@@ -13,8 +12,7 @@ export const INITIAL_RECORDS: InventoryRecordsInput["records"] = [
     medicineTaken: [
       { name: "Aspirin", quantity: 1, dosage: "300mg" },
       { name: "Nitroglycerin", quantity: 2, dosage: "0.4mg" }
-    ],
-    signatureStatus: "Signed"
+    ]
   },
   {
     date: "2024-05-15",
@@ -26,8 +24,7 @@ export const INITIAL_RECORDS: InventoryRecordsInput["records"] = [
     chiefComplaints: "Seasonal allergies and sneezing",
     medicineTaken: [
       { name: "Cetirizine", quantity: 10, dosage: "10mg" }
-    ],
-    signatureStatus: "Signed"
+    ]
   },
   {
     date: "2024-05-15",
@@ -40,8 +37,7 @@ export const INITIAL_RECORDS: InventoryRecordsInput["records"] = [
     medicineTaken: [
       { name: "Ibuprofen", quantity: 20, dosage: "400mg" },
       { name: "Paracetamol", quantity: 10, dosage: "500mg" }
-    ],
-    signatureStatus: "Pending"
+    ]
   },
   {
     date: "2024-05-16",
@@ -53,7 +49,6 @@ export const INITIAL_RECORDS: InventoryRecordsInput["records"] = [
     chiefComplaints: "Skin rash and itching",
     medicineTaken: [
       { name: "Hydrocortisone Cream", quantity: 1, dosage: "1%" }
-    ],
-    signatureStatus: "Signed"
+    ]
   }
 ];
