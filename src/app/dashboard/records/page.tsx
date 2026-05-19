@@ -35,6 +35,7 @@ export default function RecordsPage() {
       r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (r.chiefComplaints && r.chiefComplaints.toLowerCase().includes(searchTerm.toLowerCase())) ||
       r.medicineTaken?.some((m: any) => m.name.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [records, searchTerm]);
@@ -95,7 +96,7 @@ export default function RecordsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by patient, email, dept or medicine..."
+                placeholder="Search by patient, email, dept, medicine or symptoms..."
                 className="pl-8 h-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -124,6 +125,7 @@ export default function RecordsPage() {
                     <TableHead className="w-[60px] font-bold text-primary text-center">Age</TableHead>
                     <TableHead className="w-[80px] font-bold text-primary">Gender</TableHead>
                     <TableHead className="font-bold text-primary">Department</TableHead>
+                    <TableHead className="font-bold text-primary">Chief Complaints</TableHead>
                     <TableHead className="font-bold text-primary">Medicines Issued</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -145,6 +147,11 @@ export default function RecordsPage() {
                             {record.department}
                           </Badge>
                         </TableCell>
+                        <TableCell className="max-w-[200px]">
+                          <p className="text-xs text-muted-foreground line-clamp-2" title={record.chiefComplaints}>
+                            {record.chiefComplaints}
+                          </p>
+                        </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {record.medicineTaken?.map((m: any, i: number) => (
@@ -158,7 +165,7 @@ export default function RecordsPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={8} className="h-48 text-center text-muted-foreground">
+                      <TableCell colSpan={9} className="h-48 text-center text-muted-foreground">
                         {searchTerm ? "No records found matching your search." : "No issuance records logged yet."}
                       </TableCell>
                     </TableRow>
