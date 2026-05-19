@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -6,9 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Stethoscope, Lock, User, Info, ArrowLeft } from "lucide-react";
+import { Stethoscope, Lock, User, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -22,7 +22,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
-    // Only Admin can log in now
+    // Secure authentication check
     setTimeout(() => {
       if (username === "admin" && password === "password") {
         localStorage.setItem("medtrack_auth_role", "admin");
@@ -30,7 +30,7 @@ export default function LoginPage() {
         
         toast({
           title: "Login Successful",
-          description: "Welcome back, Admin.",
+          description: "Welcome back, Administrator.",
         });
         
         router.push("/dashboard");
@@ -67,13 +67,6 @@ export default function LoginPage() {
           <CardDescription>Secure administration login</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <Alert className="bg-primary/5 border-primary/20">
-            <Info className="h-4 w-4 text-primary" />
-            <AlertDescription className="text-xs text-primary/80">
-              Admin access: <span className="font-bold">admin</span> / <span className="font-bold">password</span>
-            </AlertDescription>
-          </Alert>
-          
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
@@ -81,7 +74,7 @@ export default function LoginPage() {
                 <User className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                 <Input 
                   id="username" 
-                  placeholder="admin" 
+                  placeholder="Enter username" 
                   className="pl-10 h-11"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
