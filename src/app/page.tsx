@@ -81,15 +81,8 @@ export default function PublicEntryPage() {
       createdAt: serverTimestamp(),
     };
 
+    // Non-blocking write: Initiate save and move on immediately
     addDoc(collection(db, "issuances"), record)
-      .then(() => {
-        setSubmittedRecord(record);
-        setShowReceipt(true);
-        toast({
-          title: "Log Recorded",
-          description: "Medicine issuance has been successfully logged.",
-        });
-      })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
           path: "issuances",
@@ -97,10 +90,16 @@ export default function PublicEntryPage() {
           requestResourceData: record,
         });
         errorEmitter.emit("permission-error", permissionError);
-      })
-      .finally(() => {
-        setIsSubmitting(false);
       });
+
+    // Immediate feedback for faster UX
+    setSubmittedRecord(record);
+    setShowReceipt(true);
+    toast({
+      title: "Log Recorded",
+      description: "Medicine issuance has been successfully logged.",
+    });
+    setIsSubmitting(false);
   };
 
   if (showReceipt && submittedRecord) {

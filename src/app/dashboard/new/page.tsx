@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,13 +12,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, ArrowLeft, Send } from "lucide-react";
 import { ReceiptView } from "@/components/records/receipt-view";
 import { useToast } from "@/hooks/use-toast";
-import type { InventoryRecordsInput } from "@/ai/flows/automated-inventory-insight-flow";
+import { useFirestore } from "@/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 export default function NewRecordPage() {
   const router = useRouter();
+  const db = useFirestore();
   const { toast } = useToast();
   const [showReceipt, setShowReceipt] = useState(false);
-  const [submittedRecord, setSubmittedRecord] = useState<InventoryRecordsInput["records"][0] | null>(null);
+  const [submittedRecord, setSubmittedRecord] = useState<any | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -52,28 +57,41 @@ export default function NewRecordPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Basic validation
     if (!formData.name || !formData.department || medicines.some(m => !m.name)) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields and medicine details.",
+        description: "Please fill in all required fields.",
         variant: "destructive"
       });
       return;
     }
 
-    // Automatically capture current timestamp
+    if (!db) return;
+    setIsSubmitting(true);
+
     const now = new Date();
     const date = now.toISOString().split('T')[0];
     const time = now.toTimeString().slice(0, 5);
 
-    const record: InventoryRecordsInput["records"][0] = {
+    const record = {
       ...formData,
       date,
       time,
       age: parseInt(formData.age) || 0,
-      medicineTaken: medicines
+      medicineTaken: medicines,
+      createdAt: serverTimestamp(),
     };
+
+    // Non-blocking write for Admin dashboard as well
+    addDoc(collection(db, "issuances"), record)
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: "issuances",
+          operation: "create",
+          requestResourceData: record,
+        });
+        errorEmitter.emit("permission-error", permissionError);
+      });
 
     setSubmittedRecord(record);
     setShowReceipt(true);
@@ -82,6 +100,7 @@ export default function NewRecordPage() {
       title: "Success",
       description: "Medicine issuance record has been successfully logged.",
     });
+    setIsSubmitting(false);
   };
 
   if (showReceipt && submittedRecord) {
@@ -234,8 +253,8 @@ export default function NewRecordPage() {
         </div>
 
         <div className="flex justify-end mt-8">
-          <Button type="submit" size="lg" className="bg-primary gap-2 min-w-[200px]">
-            <Send className="h-4 w-4" /> Submit & Generate Receipt
+          <Button type="submit" size="lg" className="bg-primary gap-2 min-w-[200px]" disabled={isSubmitting}>
+            <Send className="h-4 w-4" /> {isSubmitting ? "Recording..." : "Submit & Generate Receipt"}
           </Button>
         </div>
       </form>
