@@ -137,7 +137,7 @@ export default function NewRecordPage() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold font-headline tracking-tight text-primary">New Issuance Log</h1>
-          <p className="text-muted-foreground mt-1">Record a new medicine distribution. Timestamp is captured automatically.</p>
+          <p className="text-muted-foreground mt-1">Record a new medicine distribution for an employee.</p>
         </div>
       </div>
 
@@ -145,12 +145,12 @@ export default function NewRecordPage() {
         <div className="grid grid-cols-1 gap-6">
           <Card className="border-none shadow-sm">
             <CardHeader className="bg-white border-b">
-              <CardTitle className="text-lg font-headline text-primary">Patient Information</CardTitle>
+              <CardTitle className="text-lg font-headline text-primary">Employee Information</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Patient Full Name</Label>
+                  <Label htmlFor="name">Full Name</Label>
                   <Input 
                     id="name" 
                     placeholder="Enter name..." 
@@ -191,11 +191,13 @@ export default function NewRecordPage() {
                     <SelectValue placeholder="Select Department" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="General Medicine">General Medicine</SelectItem>
-                    <SelectItem value="Pediatrics">Pediatrics</SelectItem>
-                    <SelectItem value="Cardiology">Cardiology</SelectItem>
-                    <SelectItem value="Dermatology">Dermatology</SelectItem>
-                    <SelectItem value="ER">Emergency Room</SelectItem>
+                    <SelectItem value="Sales">Sales</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                    <SelectItem value="Customer Support">Customer Support</SelectItem>
+                    <SelectItem value="IT Support">IT Support</SelectItem>
+                    <SelectItem value="Operations">Operations</SelectItem>
+                    <SelectItem value="Human Resources">Human Resources</SelectItem>
+                    <SelectItem value="Quality Assurance">Quality Assurance</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -203,7 +205,7 @@ export default function NewRecordPage() {
                 <Label htmlFor="complaints">Chief Complaints</Label>
                 <Textarea 
                   id="complaints" 
-                  placeholder="Describe patient symptoms..." 
+                  placeholder="Describe employee symptoms..." 
                   className="min-h-[100px]"
                   value={formData.chiefComplaints}
                   onChange={(e) => setFormData({...formData, chiefComplaints: e.target.value})}

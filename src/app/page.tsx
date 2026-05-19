@@ -146,7 +146,7 @@ export default function PublicEntryPage() {
           <div className="h-8 w-8 bg-primary rounded flex items-center justify-center text-white">
             <Stethoscope className="h-5 w-5" />
           </div>
-          <h1 className="text-xl font-bold text-primary font-headline">MedTrack Portal</h1>
+          <h1 className="text-xl font-bold text-primary font-headline">Callbox Clinic Portal</h1>
         </div>
         <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary">
           <Link href="/login" className="gap-2">
@@ -158,19 +158,19 @@ export default function PublicEntryPage() {
       <main className="max-w-4xl mx-auto p-6 md:p-10">
         <div className="mb-8">
           <h2 className="text-3xl font-bold font-headline tracking-tight text-primary">Medicine Issuance Log</h2>
-          <p className="text-muted-foreground mt-1">Please fill in the patient details. Date and time are recorded automatically.</p>
+          <p className="text-muted-foreground mt-1">Please fill in the employee details. Date and time are recorded automatically.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 gap-6">
             <Card className="border-none shadow-sm">
               <CardHeader>
-                <CardTitle className="text-lg font-headline text-primary">Patient Information</CardTitle>
+                <CardTitle className="text-lg font-headline text-primary">Employee Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Patient Full Name</Label>
+                    <Label htmlFor="name">Full Name</Label>
                     <Input 
                       id="name" 
                       placeholder="Enter name..." 
@@ -212,16 +212,18 @@ export default function PublicEntryPage() {
                       <SelectValue placeholder="Select Department" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="General Medicine">General Medicine</SelectItem>
-                      <SelectItem value="Pediatrics">Pediatrics</SelectItem>
-                      <SelectItem value="Cardiology">Cardiology</SelectItem>
-                      <SelectItem value="Dermatology">Dermatology</SelectItem>
-                      <SelectItem value="ER">Emergency Room</SelectItem>
+                      <SelectItem value="Sales">Sales</SelectItem>
+                      <SelectItem value="Marketing">Marketing</SelectItem>
+                      <SelectItem value="Customer Support">Customer Support</SelectItem>
+                      <SelectItem value="IT Support">IT Support</SelectItem>
+                      <SelectItem value="Operations">Operations</SelectItem>
+                      <SelectItem value="Human Resources">Human Resources</SelectItem>
+                      <SelectItem value="Quality Assurance">Quality Assurance</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="complaints">Chief Complaints</Label>
+                  <Label htmlFor="complaints">Symptoms / Chief Complaints</Label>
                   <Textarea 
                     id="complaints" 
                     placeholder="Describe symptoms briefly..." 
