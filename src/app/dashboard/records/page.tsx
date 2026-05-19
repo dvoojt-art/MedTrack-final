@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -32,6 +33,7 @@ export default function RecordsPage() {
     if (!records) return [];
     return records.filter(r => 
       r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.medicineTaken?.some((m: any) => m.name.toLowerCase().includes(searchTerm.toLowerCase()))
     );
@@ -41,13 +43,14 @@ export default function RecordsPage() {
     if (!records || records.length === 0) return;
     
     // Header row
-    const headers = ["Date", "Time", "Patient Name", "Age", "Gender", "Department", "Chief Complaints", "Medicines Issued"];
+    const headers = ["Date", "Time", "Patient Name", "Email", "Age", "Gender", "Department", "Chief Complaints", "Medicines Issued"];
     
     // Map records to CSV rows, ensuring fields with commas are quoted
     const rows = records.map(r => [
       r.date,
       r.time,
       `"${r.name.replace(/"/g, '""')}"`,
+      `"${(r.email || "").replace(/"/g, '""')}"`,
       r.age,
       r.gender,
       `"${r.department.replace(/"/g, '""')}"`,
@@ -92,7 +95,7 @@ export default function RecordsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by patient, department or medicine..."
+                placeholder="Search by patient, email, dept or medicine..."
                 className="pl-8 h-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -117,10 +120,10 @@ export default function RecordsPage() {
                     <TableHead className="w-[100px] font-bold text-primary">Date</TableHead>
                     <TableHead className="w-[80px] font-bold text-primary">Time</TableHead>
                     <TableHead className="font-bold text-primary">Patient Name</TableHead>
+                    <TableHead className="font-bold text-primary">Email</TableHead>
                     <TableHead className="w-[60px] font-bold text-primary text-center">Age</TableHead>
                     <TableHead className="w-[80px] font-bold text-primary">Gender</TableHead>
                     <TableHead className="font-bold text-primary">Department</TableHead>
-                    <TableHead className="max-w-[200px] font-bold text-primary">Chief Complaints</TableHead>
                     <TableHead className="font-bold text-primary">Medicines Issued</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -134,15 +137,13 @@ export default function RecordsPage() {
                         <TableCell className="font-medium whitespace-nowrap">{record.date}</TableCell>
                         <TableCell className="text-muted-foreground whitespace-nowrap">{record.time}</TableCell>
                         <TableCell className="font-semibold text-primary">{record.name}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{record.email}</TableCell>
                         <TableCell className="text-center">{record.age}</TableCell>
                         <TableCell>{record.gender}</TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="font-normal bg-slate-100">
                             {record.department}
                           </Badge>
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate text-xs italic text-muted-foreground" title={record.chiefComplaints}>
-                          {record.chiefComplaints}
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">

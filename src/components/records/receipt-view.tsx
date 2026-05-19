@@ -5,10 +5,21 @@ import { CheckCircle2, Printer, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import type { InventoryRecordsInput } from "@/ai/flows/automated-inventory-insight-flow";
 
 interface ReceiptViewProps {
-  record: InventoryRecordsInput["records"][0];
+  record: {
+    date: string;
+    time: string;
+    name: string;
+    email: string;
+    department: string;
+    chiefComplaints: string;
+    medicineTaken: Array<{
+      name: string;
+      quantity: number;
+      dosage: string;
+    }>;
+  };
   onClose: () => void;
 }
 
@@ -32,6 +43,8 @@ export function ReceiptView({ record, onClose }: ReceiptViewProps) {
           <span className="font-medium text-right">{record.time}</span>
           <span className="text-muted-foreground">Patient:</span>
           <span className="font-medium text-right">{record.name}</span>
+          <span className="text-muted-foreground">Email:</span>
+          <span className="font-medium text-right text-xs truncate ml-2" title={record.email}>{record.email}</span>
           <span className="text-muted-foreground">Dept:</span>
           <span className="font-medium text-right">{record.department}</span>
         </div>
