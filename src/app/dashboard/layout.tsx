@@ -1,9 +1,9 @@
+
 "use client";
 
 import { SidebarProvider, Sidebar, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardNav } from "@/components/layout/dashboard-nav";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Toaster } from "@/components/ui/toaster";
 
 export default function DashboardLayout({
@@ -12,20 +12,11 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
-    const authStatus = localStorage.getItem("medtrack_admin_auth");
-    const role = localStorage.getItem("medtrack_auth_role");
-
-    // Only Admin can access any dashboard sub-routes
-    if (authStatus !== "true" || role !== "admin") {
-      router.push("/login");
-      return;
-    }
-
+    // Making it accessible for anyone - removing the redirect to login
     setIsAuthorized(true);
-  }, [router]);
+  }, []);
 
   if (!isAuthorized) {
     return (

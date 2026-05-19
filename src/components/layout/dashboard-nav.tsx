@@ -2,10 +2,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { 
   ClipboardList, 
-  LogOut,
+  Home,
   Stethoscope,
   UserCircle
 } from "lucide-react";
@@ -21,33 +21,17 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { useEffect, useState } from "react";
 
 const allItems = [
   {
     title: "Medicine Logs",
     url: "/dashboard/records",
     icon: ClipboardList,
-    roles: ["admin"],
   },
 ];
 
 export function DashboardNav() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [role, setRole] = useState<string | null>(null);
-
-  useEffect(() => {
-    setRole(localStorage.getItem("medtrack_auth_role"));
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem("medtrack_admin_auth");
-    localStorage.removeItem("medtrack_auth_role");
-    router.push("/login");
-  };
-
-  const filteredItems = allItems.filter(item => !role || item.roles.includes(role));
 
   return (
     <>
@@ -69,7 +53,7 @@ export function DashboardNav() {
           <SidebarGroupLabel>Administration</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {filteredItems.map((item) => (
+              {allItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild 
@@ -90,13 +74,15 @@ export function DashboardNav() {
       <SidebarFooter className="border-t p-4">
         <div className="mb-4 px-2 py-1.5 flex items-center gap-2 text-xs text-muted-foreground">
           <UserCircle className="h-4 w-4" />
-          <span className="truncate">Admin Session</span>
+          <span className="truncate">Public Administration</span>
         </div>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-              <LogOut className="h-4 w-4" />
-              <span>Logout</span>
+            <SidebarMenuButton asChild className="text-muted-foreground hover:text-primary">
+              <Link href="/">
+                <Home className="h-4 w-4" />
+                <span>Exit to Portal</span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
