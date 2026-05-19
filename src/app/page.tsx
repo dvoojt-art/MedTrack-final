@@ -53,7 +53,7 @@ export default function WelcomePage() {
                 Review distribution logs, generate CSV reports, and gain AI-powered inventory insights.
               </p>
               <Button asChild className="w-full bg-primary hover:bg-primary/90 mt-4 gap-2">
-                <Link href="/dashboard">
+                <Link href="/login">
                   Access Administration <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
