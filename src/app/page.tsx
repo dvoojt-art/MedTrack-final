@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,13 +11,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, Send, Stethoscope, ShieldCheck } from "lucide-react";
 import { ReceiptView } from "@/components/records/receipt-view";
 import { useToast } from "@/hooks/use-toast";
-import type { InventoryRecordsInput } from "@/ai/flows/automated-inventory-insight-flow";
+import { useFirestore } from "@/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 export default function PublicEntryPage() {
   const { toast } = useToast();
+  const db = useFirestore();
   const [showReceipt, setShowReceipt] = useState(false);
-  const [submittedRecord, setSubmittedRecord] = useState<InventoryRecordsInput["records"][0] | null>(null);
+  const [submittedRecord, setSubmittedRecord] = useState<any | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -60,26 +65,42 @@ export default function PublicEntryPage() {
       return;
     }
 
-    // Capture current date and time at the moment of distribution
+    if (!db) return;
+    setIsSubmitting(true);
+
     const now = new Date();
     const date = now.toISOString().split('T')[0];
     const time = now.toTimeString().slice(0, 5);
 
-    const record: InventoryRecordsInput["records"][0] = {
+    const record = {
       ...formData,
       date,
       time,
       age: parseInt(formData.age) || 0,
-      medicineTaken: medicines
+      medicineTaken: medicines,
+      createdAt: serverTimestamp(),
     };
 
-    setSubmittedRecord(record);
-    setShowReceipt(true);
-    
-    toast({
-      title: "Log Recorded",
-      description: "Medicine issuance has been successfully logged.",
-    });
+    addDoc(collection(db, "issuances"), record)
+      .then(() => {
+        setSubmittedRecord(record);
+        setShowReceipt(true);
+        toast({
+          title: "Log Recorded",
+          description: "Medicine issuance has been successfully logged.",
+        });
+      })
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: "issuances",
+          operation: "create",
+          requestResourceData: record,
+        });
+        errorEmitter.emit("permission-error", permissionError);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   };
 
   if (showReceipt && submittedRecord) {
@@ -253,8 +274,8 @@ export default function PublicEntryPage() {
           </div>
 
           <div className="flex justify-end pt-4">
-            <Button type="submit" size="lg" className="bg-primary gap-2 min-w-[220px]">
-              <Send className="h-4 w-4" /> Record Distribution
+            <Button type="submit" size="lg" className="bg-primary gap-2 min-w-[220px]" disabled={isSubmitting}>
+              <Send className="h-4 w-4" /> {isSubmitting ? "Recording..." : "Record Distribution"}
             </Button>
           </div>
         </form>

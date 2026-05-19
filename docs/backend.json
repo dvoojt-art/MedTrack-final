@@ -1,0 +1,41 @@
+
+{
+  "entities": {
+    "Issuance": {
+      "title": "Medicine Issuance Record",
+      "description": "A record of medicine distributed to a patient.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Patient full name" },
+        "age": { "type": "number", "description": "Patient age" },
+        "gender": { "type": "string", "description": "Patient gender" },
+        "department": { "type": "string", "description": "Facility department" },
+        "chiefComplaints": { "type": "string", "description": "Patient complaints" },
+        "date": { "type": "string", "format": "date", "description": "Date of issuance (YYYY-MM-DD)" },
+        "time": { "type": "string", "description": "Time of issuance (HH:MM)" },
+        "medicineTaken": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "quantity": { "type": "number" },
+              "dosage": { "type": "string" }
+            }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "department", "medicineTaken", "createdAt"]
+    }
+  },
+  "auth": {
+    "providers": ["password"]
+  },
+  "firestore": {
+    "/issuances/{issuanceId}": {
+      "schema": "Issuance",
+      "description": "Collection of medicine issuance records."
+    }
+  }
+}

@@ -4,10 +4,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { 
-  LayoutDashboard, 
   ClipboardList, 
-  Lightbulb, 
-  PlusCircle, 
   LogOut,
   Stethoscope,
   UserCircle
@@ -28,28 +25,10 @@ import { useEffect, useState } from "react";
 
 const allItems = [
   {
-    title: "Overview",
-    url: "/dashboard",
-    icon: LayoutDashboard,
-    roles: ["admin"],
-  },
-  {
     title: "Medicine Logs",
     url: "/dashboard/records",
     icon: ClipboardList,
-    roles: ["admin", "employee"],
-  },
-  {
-    title: "AI Insights",
-    url: "/dashboard/insights",
-    icon: Lightbulb,
     roles: ["admin"],
-  },
-  {
-    title: "New Entry",
-    url: "/dashboard/new",
-    icon: PlusCircle,
-    roles: ["admin", "employee"],
   },
 ];
 
@@ -80,21 +59,21 @@ export function DashboardNav() {
           <div>
             <h1 className="text-lg font-bold leading-none text-primary">MedTrack</h1>
             <p className="text-xs text-muted-foreground mt-1 font-medium">
-              {role === 'admin' ? 'Admin Panel' : 'Staff Portal'}
+              Admin Panel
             </p>
           </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>Administration</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {filteredItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild 
-                    isActive={pathname === item.url}
+                    isActive={pathname === item.url || pathname === "/dashboard"}
                     tooltip={item.title}
                   >
                     <Link href={item.url} className="flex items-center gap-3">
@@ -111,7 +90,7 @@ export function DashboardNav() {
       <SidebarFooter className="border-t p-4">
         <div className="mb-4 px-2 py-1.5 flex items-center gap-2 text-xs text-muted-foreground">
           <UserCircle className="h-4 w-4" />
-          <span className="truncate">Logged in as {role}</span>
+          <span className="truncate">Admin Session</span>
         </div>
         <SidebarMenu>
           <SidebarMenuItem>
