@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -7,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Stethoscope, Lock, User } from "lucide-react";
+import { Stethoscope, Lock, User, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -54,7 +54,14 @@ export default function LoginPage() {
           <CardTitle className="text-3xl font-bold font-headline text-primary tracking-tight">MedTrack Admin</CardTitle>
           <CardDescription>Secure access for medical administrators</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <Alert className="bg-primary/5 border-primary/20">
+            <Info className="h-4 w-4 text-primary" />
+            <AlertDescription className="text-xs text-primary/80">
+              Demo access: <span className="font-bold">admin</span> / <span className="font-bold">password</span>
+            </AlertDescription>
+          </Alert>
+
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
@@ -73,7 +80,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Button variant="link" className="px-0 h-auto text-xs text-muted-foreground">Forgot password?</Button>
+                <Button variant="link" type="button" className="px-0 h-auto text-xs text-muted-foreground">Forgot password?</Button>
               </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
