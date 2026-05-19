@@ -58,10 +58,19 @@ export default function PublicEntryPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.department || medicines.some(m => !m.name)) {
+    // Check if all fields are filled
+    const isMedicinesValid = medicines.every(m => m.name.trim() !== "" && m.dosage.trim() !== "" && m.quantity > 0);
+    const isFormValid = 
+      formData.name.trim() !== "" && 
+      formData.email.trim() !== "" && 
+      formData.age.trim() !== "" && 
+      formData.department !== "" && 
+      formData.chiefComplaints.trim() !== "";
+
+    if (!isFormValid || !isMedicinesValid) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields including name and email.",
+        title: "Incomplete Form",
+        description: "All fields are required. Please ensure employee details and medicine information are complete.",
         variant: "destructive"
       });
       return;
@@ -160,7 +169,7 @@ export default function PublicEntryPage() {
       <main className="max-w-4xl mx-auto p-6 md:p-10">
         <div className="mb-8">
           <h2 className="text-3xl font-bold font-headline tracking-tight text-primary">Medicine Issuance Log</h2>
-          <p className="text-muted-foreground mt-1">Please fill in the employee details. Date and time are recorded automatically.</p>
+          <p className="text-muted-foreground mt-1">Please fill in all employee details. All fields are mandatory.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -172,17 +181,17 @@ export default function PublicEntryPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name">Full Name *</Label>
                     <Input 
                       id="name" 
-                      placeholder="Enter name..." 
+                      placeholder="Enter full name" 
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Work Email</Label>
+                    <Label htmlFor="email">Work Email *</Label>
                     <Input 
                       id="email" 
                       type="email"
@@ -195,20 +204,21 @@ export default function PublicEntryPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="age">Age</Label>
+                    <Label htmlFor="age">Age *</Label>
                     <Input 
                       id="age" 
                       type="number" 
                       placeholder="Years" 
                       value={formData.age}
                       onChange={(e) => setFormData({...formData, age: e.target.value})}
+                      required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="gender">Gender</Label>
+                    <Label htmlFor="gender">Gender *</Label>
                     <Select value={formData.gender} onValueChange={(val) => setFormData({...formData, gender: val})}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Gender" />
+                        <SelectValue placeholder="Select Gender" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Male">Male</SelectItem>
@@ -218,7 +228,7 @@ export default function PublicEntryPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
+                    <Label htmlFor="department">Department *</Label>
                     <Select value={formData.department} onValueChange={(val) => setFormData({...formData, department: val})}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select Department" />
@@ -236,13 +246,14 @@ export default function PublicEntryPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="complaints">Symptoms / Chief Complaints</Label>
+                  <Label htmlFor="complaints">Symptoms / Chief Complaints *</Label>
                   <Textarea 
                     id="complaints" 
                     placeholder="Describe symptoms briefly..." 
                     className="min-h-[80px]"
                     value={formData.chiefComplaints}
                     onChange={(e) => setFormData({...formData, chiefComplaints: e.target.value})}
+                    required
                   />
                 </div>
               </CardContent>
@@ -259,7 +270,7 @@ export default function PublicEntryPage() {
                 {medicines.map((med, index) => (
                   <div key={index} className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-slate-50 relative animate-in fade-in duration-300">
                     <div className="sm:col-span-2 space-y-2">
-                      <Label>Medicine Name</Label>
+                      <Label>Medicine Name *</Label>
                       <Input 
                         placeholder="e.g. Paracetamol" 
                         value={med.name}
@@ -268,21 +279,23 @@ export default function PublicEntryPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Quantity</Label>
+                      <Label>Quantity *</Label>
                       <Input 
                         type="number" 
                         value={med.quantity}
                         min={1}
                         onChange={(e) => updateMedicine(index, 'quantity', parseInt(e.target.value))}
+                        required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Dosage</Label>
+                      <Label>Dosage *</Label>
                       <div className="flex gap-2">
                         <Input 
                           placeholder="e.g. 500mg" 
                           value={med.dosage}
                           onChange={(e) => updateMedicine(index, 'dosage', e.target.value)}
+                          required
                         />
                         {medicines.length > 1 && (
                           <Button 

@@ -27,7 +27,7 @@
         },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "email", "department", "medicineTaken", "createdAt"]
+      "required": ["name", "email", "age", "gender", "department", "chiefComplaints", "medicineTaken", "createdAt"]
     }
   },
   "auth": {

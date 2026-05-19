@@ -59,10 +59,19 @@ export default function NewRecordPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.department || medicines.some(m => !m.name)) {
+    // Check if all fields are filled
+    const isMedicinesValid = medicines.every(m => m.name.trim() !== "" && m.dosage.trim() !== "" && m.quantity > 0);
+    const isFormValid = 
+      formData.name.trim() !== "" && 
+      formData.email.trim() !== "" && 
+      formData.age.trim() !== "" && 
+      formData.department !== "" && 
+      formData.chiefComplaints.trim() !== "";
+
+    if (!isFormValid || !isMedicinesValid) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields including name and email.",
+        description: "All fields are required. Please fill in all employee and medicine details.",
         variant: "destructive"
       });
       return;
@@ -151,38 +160,41 @@ export default function NewRecordPage() {
             <CardContent className="p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name">Full Name *</Label>
                   <Input 
                     id="name" 
-                    placeholder="Enter name..." 
+                    placeholder="Enter full name" 
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Work Email</Label>
+                  <Label htmlFor="email">Work Email *</Label>
                   <Input 
                     id="email" 
                     type="email"
                     placeholder="employee@callboxinc.com" 
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    required
                   />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="age">Age</Label>
+                  <Label htmlFor="age">Age *</Label>
                   <Input 
                     id="age" 
                     type="number" 
                     placeholder="Years" 
                     value={formData.age}
                     onChange={(e) => setFormData({...formData, age: e.target.value})}
+                    required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="gender">Gender</Label>
+                  <Label htmlFor="gender">Gender *</Label>
                   <Select value={formData.gender} onValueChange={(val) => setFormData({...formData, gender: val})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Gender" />
@@ -195,7 +207,7 @@ export default function NewRecordPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
+                  <Label htmlFor="department">Department *</Label>
                   <Select value={formData.department} onValueChange={(val) => setFormData({...formData, department: val})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select Department" />
@@ -213,13 +225,14 @@ export default function NewRecordPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="complaints">Chief Complaints</Label>
+                <Label htmlFor="complaints">Chief Complaints *</Label>
                 <Textarea 
                   id="complaints" 
-                  placeholder="Describe employee symptoms..." 
+                  placeholder="Describe symptoms briefly..." 
                   className="min-h-[100px]"
                   value={formData.chiefComplaints}
                   onChange={(e) => setFormData({...formData, chiefComplaints: e.target.value})}
+                  required
                 />
               </div>
             </CardContent>
@@ -237,28 +250,32 @@ export default function NewRecordPage() {
                 {medicines.map((med, index) => (
                   <div key={index} className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-slate-50 relative animate-in fade-in duration-300">
                     <div className="sm:col-span-2 space-y-2">
-                      <Label>Medicine Name</Label>
+                      <Label>Medicine Name *</Label>
                       <Input 
                         placeholder="e.g. Paracetamol" 
                         value={med.name}
                         onChange={(e) => updateMedicine(index, 'name', e.target.value)}
+                        required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Quantity</Label>
+                      <Label>Quantity *</Label>
                       <Input 
                         type="number" 
                         value={med.quantity}
+                        min={1}
                         onChange={(e) => updateMedicine(index, 'quantity', parseInt(e.target.value))}
+                        required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Dosage</Label>
+                      <Label>Dosage *</Label>
                       <div className="flex gap-2">
                         <Input 
                           placeholder="e.g. 500mg" 
                           value={med.dosage}
                           onChange={(e) => updateMedicine(index, 'dosage', e.target.value)}
+                          required
                         />
                         {medicines.length > 1 && (
                           <Button 
