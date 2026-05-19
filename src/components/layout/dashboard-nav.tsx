@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   ClipboardList, 
   Home,
@@ -11,9 +11,12 @@ import {
   LayoutDashboard,
   Users,
   Lightbulb,
-  PlusCircle
+  PlusCircle,
+  LogOut,
+  ShieldCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   SidebarContent,
   SidebarGroup,
@@ -25,6 +28,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import { useToast } from "@/hooks/use-toast";
 
 const navItems = [
   {
@@ -59,6 +63,18 @@ const managementItems = [
 
 export function DashboardNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    localStorage.removeItem("medtrack_admin_auth");
+    localStorage.removeItem("medtrack_auth_role");
+    toast({
+      title: "Logged Out",
+      description: "Admin session has been securely closed.",
+    });
+    router.push("/login");
+  };
 
   return (
     <>
@@ -69,15 +85,15 @@ export function DashboardNav() {
           </div>
           <div>
             <h1 className="text-lg font-bold leading-none text-primary">MedTrack</h1>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">
-              Administrator
+            <p className="text-[10px] text-muted-foreground mt-1 font-bold uppercase tracking-wider flex items-center gap-1">
+              <ShieldCheck className="h-3 w-3" /> Super Admin
             </p>
           </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Core System</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-3">Core System</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (
@@ -99,7 +115,7 @@ export function DashboardNav() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Management</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-3">Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {managementItems.map((item) => (
@@ -120,18 +136,27 @@ export function DashboardNav() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t p-4">
-        <div className="mb-4 px-2 py-1.5 flex items-center gap-2 text-xs text-muted-foreground">
-          <UserCircle className="h-4 w-4" />
-          <span className="truncate">Active Admin Portal</span>
+      <SidebarFooter className="border-t p-4 space-y-2">
+        <div className="px-2 py-1.5 flex items-center gap-2 text-[10px] font-bold uppercase text-muted-foreground/60 tracking-tight">
+          <UserCircle className="h-3 w-3" />
+          <span className="truncate">Session Active</span>
         </div>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="text-muted-foreground hover:text-primary">
+            <SidebarMenuButton asChild className="text-muted-foreground hover:text-primary mb-1">
               <Link href="/">
                 <Home className="h-4 w-4" />
                 <span>Exit to Portal</span>
               </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              onClick={handleLogout}
+              className="text-destructive hover:text-destructive hover:bg-destructive/5 font-semibold"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Sign Out</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
