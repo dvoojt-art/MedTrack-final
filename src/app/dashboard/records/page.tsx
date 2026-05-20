@@ -118,15 +118,15 @@ export default function RecordsPage() {
               <Table>
                 <TableHeader className="bg-slate-50">
                   <TableRow>
-                    <TableHead className="w-[100px] font-bold text-slate-600">Date</TableHead>
-                    <TableHead className="w-[80px] font-bold text-slate-600">Time</TableHead>
-                    <TableHead className="font-bold text-slate-600">Patient Name</TableHead>
-                    <TableHead className="font-bold text-slate-600">Email</TableHead>
-                    <TableHead className="w-[60px] font-bold text-slate-600 text-center">Age</TableHead>
-                    <TableHead className="w-[80px] font-bold text-slate-600">Gender</TableHead>
-                    <TableHead className="font-bold text-slate-600">Department</TableHead>
-                    <TableHead className="font-bold text-slate-600">Chief Complaints</TableHead>
-                    <TableHead className="font-bold text-slate-600">Medicines Issued</TableHead>
+                    <TableHead className="w-[100px] font-bold text-slate-800">Date</TableHead>
+                    <TableHead className="w-[80px] font-bold text-slate-800">Time</TableHead>
+                    <TableHead className="font-bold text-slate-800">Patient Name</TableHead>
+                    <TableHead className="font-bold text-slate-800">Email</TableHead>
+                    <TableHead className="w-[60px] font-bold text-slate-800 text-center">Age</TableHead>
+                    <TableHead className="w-[80px] font-bold text-slate-800">Gender</TableHead>
+                    <TableHead className="font-bold text-slate-800">Department</TableHead>
+                    <TableHead className="font-bold text-slate-800">Chief Complaints</TableHead>
+                    <TableHead className="font-bold text-slate-800">Medicines Issued</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -138,7 +138,7 @@ export default function RecordsPage() {
                       >
                         <TableCell className="font-medium whitespace-nowrap text-slate-500">{record.date}</TableCell>
                         <TableCell className="text-muted-foreground whitespace-nowrap">{record.time}</TableCell>
-                        <TableCell className="font-semibold text-accent">{record.name}</TableCell>
+                        <TableCell className="font-bold text-accent">{record.name}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{record.email}</TableCell>
                         <TableCell className="text-center">{record.age}</TableCell>
                         <TableCell className="text-slate-500">{record.gender}</TableCell>

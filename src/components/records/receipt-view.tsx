@@ -84,7 +84,7 @@ export function ReceiptView({ record, onClose }: ReceiptViewProps) {
       </CardContent>
       <Separator />
       <CardFooter className="flex justify-between pt-6">
-        <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-2 border-slate-200 text-slate-600">
+        <Button variant="outline" size="sm" onClick={() => typeof window !== 'undefined' && window.print()} className="gap-2 border-slate-200 text-slate-600">
           <Printer className="h-4 w-4" /> Print
         </Button>
         <Button variant="outline" size="sm" className="gap-2 border-slate-200 text-slate-600">
@@ -93,7 +93,7 @@ export function ReceiptView({ record, onClose }: ReceiptViewProps) {
         <Button 
           size="sm" 
           onClick={onClose} 
-          className="bg-accent hover:bg-accent/90 text-primary font-bold shadow-md px-6"
+          className="bg-accent hover:bg-accent/90 text-primary font-black uppercase tracking-widest shadow-md px-8"
         >
           DONE
         </Button>
