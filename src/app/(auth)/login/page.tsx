@@ -57,7 +57,7 @@ export default function LoginPage() {
           title: "Setup Access Granted",
           description: "Proceeding to initialize first administrator account.",
         });
-        router.push("/dashboard/users"); // Go directly to user management to set up first real admin
+        router.push("/dashboard/users");
         return;
       }
 
@@ -82,7 +82,7 @@ export default function LoginPage() {
             localStorage.setItem("medtrack_admin_auth", "true");
             toast({
               title: "Verification Successful",
-              description: `Welcome, ${adminData.fullName}. Accessing dashboard...`,
+              description: `Welcome, ${adminData.fullName}.`,
             });
             router.push("/dashboard");
           }
@@ -104,7 +104,7 @@ export default function LoginPage() {
         title: "Account Not Registered",
         description: isBootstrapAvailable 
           ? "System is uninitialized. Use setup credentials provided in the alert."
-          : "This email address is not recognized by the system.",
+          : "This account is not recognized by the system.",
         variant: "destructive",
       });
       
@@ -131,11 +131,11 @@ export default function LoginPage() {
       
       <div className="w-full max-w-md space-y-4">
         {isBootstrapAvailable && (
-          <Alert className="bg-primary/10 border-primary text-primary-foreground animate-in slide-in-from-top-4 duration-500 shadow-lg">
-            <UserPlus className="h-5 w-5 text-accent" />
-            <AlertTitle className="font-bold text-accent">Initial Setup Required</AlertTitle>
-            <AlertDescription className="text-sm text-foreground/80">
-              No administrators found. Log in with the system default to register your first admin: <br />
+          <Alert className="bg-primary/20 border-primary text-black animate-in slide-in-from-top-4 duration-500 shadow-lg">
+            <UserPlus className="h-5 w-5 text-black" />
+            <AlertTitle className="font-bold">Initial Setup Required</AlertTitle>
+            <AlertDescription className="text-sm font-medium">
+              No administrators found. Log in with default setup credentials: <br />
               <strong>User:</strong> admin | <strong>Pass:</strong> password
             </AlertDescription>
           </Alert>
@@ -146,24 +146,24 @@ export default function LoginPage() {
           <CardHeader className="space-y-2 text-center pb-8 pt-10">
             <div className="flex justify-center mb-4">
               <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center border-4 border-white shadow-sm">
-                <ShieldCheck className="h-8 w-8 text-accent" />
+                <ShieldCheck className="h-8 w-8 text-black" />
               </div>
             </div>
-            <CardTitle className="text-3xl font-bold font-headline text-accent tracking-tight">Admin Portal</CardTitle>
-            <CardDescription>Secure Clinical Management Login</CardDescription>
+            <CardTitle className="text-3xl font-bold font-headline text-black tracking-tight">Admin Portal</CardTitle>
+            <CardDescription className="text-muted-foreground font-medium">Secure Clinical Management Access</CardDescription>
           </CardHeader>
           <CardContent className="px-8 pb-8 space-y-6">
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="username" className="text-xs font-bold uppercase text-muted-foreground">
-                  Username or Email
+                  Username or Work Email
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground/50" />
                   <Input 
                     id="username" 
                     type="text"
-                    placeholder={isBootstrapAvailable ? "admin" : "email@callboxinc.com"} 
+                    placeholder={isBootstrapAvailable ? "admin" : "Enter your email"} 
                     className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -208,8 +208,8 @@ export default function LoginPage() {
             </form>
           </CardContent>
           <CardFooter className="flex flex-col items-center bg-slate-50 border-t p-6">
-            <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
-              Authorized access only. All security events are monitored and logged.
+            <p className="text-[10px] text-muted-foreground text-center leading-relaxed font-bold uppercase tracking-widest">
+              Authorized access only. Security event logged.
             </p>
           </CardFooter>
         </Card>

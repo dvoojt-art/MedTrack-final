@@ -27,10 +27,10 @@ export default function DashboardLayout({
 
   if (!isAuthorized) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+      <div className="flex h-screen w-full items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-sm font-medium text-muted-foreground animate-pulse">Verifying Admin Access...</p>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-black" />
+          <p className="text-xs font-black uppercase tracking-widest text-black animate-pulse">Verifying Security Credentials...</p>
         </div>
       </div>
     );
@@ -38,15 +38,15 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-slate-50/50">
-        <Sidebar className="border-r shadow-sm">
+      <div className="flex min-h-screen w-full bg-white">
+        <Sidebar className="border-r border-black/10 shadow-xl">
           <DashboardNav />
         </Sidebar>
         <SidebarInset className="flex flex-col">
           <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-6 backdrop-blur-md">
             <SidebarTrigger className="-ml-1" />
             <div className="h-4 w-[1px] bg-border" />
-            <h2 className="text-sm font-semibold text-muted-foreground font-body">MedTrack Administration System</h2>
+            <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Clinical Administration System</h2>
           </header>
           <main className="flex-1 overflow-auto p-6 lg:p-10 max-w-[1600px] mx-auto w-full">
             {children}
