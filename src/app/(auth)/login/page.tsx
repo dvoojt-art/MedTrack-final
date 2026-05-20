@@ -42,6 +42,14 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
+    // 1. Immediate Session Check
+    const isAuth = localStorage.getItem("medtrack_admin_auth") === "true";
+    if (isAuth) {
+      router.push("/dashboard");
+      return;
+    }
+
+    // 2. High-speed Admin Existence Check
     const checkAdminsExist = async () => {
       if (!db) return;
       try {
@@ -56,7 +64,7 @@ export default function LoginPage() {
       }
     };
     checkAdminsExist();
-  }, [db]);
+  }, [db, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

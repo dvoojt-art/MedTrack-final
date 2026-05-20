@@ -124,7 +124,7 @@ export default function PublicPortalPage() {
         title: "Record Saved",
         description: "Medicine distribution successfully logged in the system.",
       });
-    }, 1200);
+    }, 700);
   };
 
   if (showReceipt && submittedRecord) {
@@ -167,7 +167,7 @@ export default function PublicPortalPage() {
           </div>
           <h1 className="text-xl font-bold text-slate-700 font-headline">Clinic Entry Portal</h1>
         </div>
-        <Button variant="ghost" size="sm" asChild className="text-slate-600 hover:text-primary font-semibold">
+        <Button variant="ghost" size="sm" asChild className="text-slate-600 hover:text-primary font-bold">
           <Link href="/" className="gap-2">
             <Home className="h-4 w-4" /> Exit to Home
           </Link>
