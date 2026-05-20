@@ -19,7 +19,7 @@ export default function WelcomePage() {
             MED<span className="text-primary">TRACK</span>
           </h1>
           <p className="text-lg md:text-xl max-w-xl mx-auto leading-relaxed font-black mt-32 uppercase tracking-[0.3em] animate-in fade-in duration-1000">
-            <span className="text-primary">Callbôx</span> <span className="text-accent">Davao</span>
+            <span className="text-accent">Callbôx</span> <span className="text-primary">Davao</span>
           </p>
         </div>
 
