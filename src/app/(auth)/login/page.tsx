@@ -30,6 +30,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showSetupModal, setShowSetupModal] = useState(false);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   // Setup form state
   const [setupData, setSetupData] = useState({
@@ -47,8 +48,9 @@ export default function LoginPage() {
         if (snap.empty) {
           setShowSetupModal(true);
         }
+        setInitialCheckDone(true);
       } catch (e) {
-        // Silent fail for check
+        setInitialCheckDone(true);
       }
     };
     checkAdminsExist();
@@ -160,90 +162,100 @@ export default function LoginPage() {
       </div>
       
       <div className="w-full max-w-md">
-        <Card className="border-none shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 bg-slate-50">
-          <div className="h-2 bg-primary w-full" />
-          <CardHeader className="space-y-2 text-center pb-8 pt-10">
-            <div className="flex justify-center mb-4">
-              <div className="h-16 w-16 bg-primary rounded-full flex items-center justify-center border-4 border-white shadow-sm">
-                <ShieldCheck className="h-8 w-8 text-slate-700" />
-              </div>
-            </div>
-            <CardTitle className="text-3xl font-bold font-headline text-slate-700 tracking-tight uppercase">Admin Portal</CardTitle>
-            <CardDescription className="text-slate-400 font-medium">Secure Clinical Management Access</CardDescription>
-          </CardHeader>
-          <CardContent className="px-8 pb-8 space-y-6">
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="username" className="text-xs font-bold uppercase text-slate-500">
-                  Work Email Address
-                </Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                  <Input 
-                    id="username" 
-                    type="text"
-                    placeholder="Enter your email" 
-                    className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20 bg-white"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                  />
+        {!initialCheckDone ? (
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Security Check...</p>
+          </div>
+        ) : (
+          <Card className="border-none shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 bg-slate-50">
+            <div className="h-2 bg-primary w-full" />
+            <CardHeader className="space-y-2 text-center pb-8 pt-10">
+              <div className="flex justify-center mb-4">
+                <div className="h-16 w-16 bg-accent rounded-2xl flex items-center justify-center border-4 border-white shadow-sm">
+                  <ShieldCheck className="h-8 w-8 text-primary" />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-xs font-bold uppercase text-slate-500">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                  <Input 
-                    id="password" 
-                    type={showPassword ? "text" : "password"} 
-                    placeholder="••••••••" 
-                    className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20 bg-white"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-slate-400 hover:text-primary"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
+              <CardTitle className="text-3xl font-bold font-headline text-accent tracking-tight uppercase">Admin Portal</CardTitle>
+              <CardDescription className="text-slate-400 font-medium">Secure Clinical Management Access</CardDescription>
+            </CardHeader>
+            <CardContent className="px-8 pb-8 space-y-6">
+              <form onSubmit={handleLogin} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-xs font-bold uppercase text-slate-500">
+                    Work Email Address
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                    <Input 
+                      id="username" 
+                      type="text"
+                      placeholder="Enter your email" 
+                      className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20 bg-white"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
-              <Button type="submit" className="w-full h-12 text-md font-bold bg-slate-700 hover:bg-slate-800 text-primary shadow-lg transition-all mt-4" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Verifying...
-                  </>
-                ) : (
-                  "Access Dashboard"
-                )}
-              </Button>
-            </form>
-          </CardContent>
-          <CardFooter className="flex flex-col items-center bg-slate-100 border-t p-6">
-            <p className="text-[10px] text-slate-400 text-center leading-relaxed font-bold uppercase tracking-widest">
-              Authorized access only. Security event logged.
-            </p>
-          </CardFooter>
-        </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-xs font-bold uppercase text-slate-500">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                    <Input 
+                      id="password" 
+                      type={showPassword ? "text" : "password"} 
+                      placeholder="••••••••" 
+                      className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20 bg-white"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-slate-400 hover:text-primary"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+                <Button type="submit" className="w-full h-12 text-md font-bold bg-accent hover:bg-accent/90 text-primary shadow-lg transition-all mt-4" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    "Access Dashboard"
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+            <CardFooter className="flex flex-col items-center bg-slate-100 border-t p-6">
+              <p className="text-[10px] text-slate-400 text-center leading-relaxed font-bold uppercase tracking-widest">
+                Authorized access only. Security event logged.
+              </p>
+            </CardFooter>
+          </Card>
+        )}
       </div>
 
-      <Dialog open={showSetupModal} onOpenChange={setShowSetupModal}>
-        <DialogContent className="sm:max-w-[425px] border-none shadow-2xl animate-in fade-in duration-150">
+      <Dialog open={showSetupModal} onOpenChange={(open) => {
+        // Prevent closing if setup is required
+        if (open || !showSetupModal) setShowSetupModal(open);
+      }}>
+        <DialogContent className="sm:max-w-[425px] border-none shadow-2xl animate-in fade-in zoom-in-95 duration-200" onPointerDownOutside={(e) => e.preventDefault()}>
           <form onSubmit={handleSetupSubmit}>
             <DialogHeader className="space-y-3">
-              <div className="h-12 w-12 bg-primary/20 rounded-full flex items-center justify-center text-slate-700 mb-2">
+              <div className="h-12 w-12 bg-primary/20 rounded-full flex items-center justify-center text-accent mb-2">
                 <ShieldAlert className="h-6 w-6" />
               </div>
-              <DialogTitle className="text-2xl font-bold font-headline text-slate-700">Initial Setup Required</DialogTitle>
+              <DialogTitle className="text-2xl font-bold font-headline text-accent">Initial Setup Required</DialogTitle>
               <DialogDescription className="text-slate-500">
-                Please add a new admin. This Super Admin account will be recorded in the system management list.
+                No administrators found. Please add a new Super Admin to initialize the system management list.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-6">
@@ -284,7 +296,7 @@ export default function LoginPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="w-full h-11 bg-slate-700 hover:bg-slate-800 text-primary font-bold shadow-md" disabled={loading}>
+              <Button type="submit" className="w-full h-11 bg-accent hover:bg-accent/90 text-primary font-bold shadow-md" disabled={loading}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />}
                 Complete Setup & Login
               </Button>
