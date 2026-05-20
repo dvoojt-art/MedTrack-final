@@ -18,8 +18,8 @@ export default function WelcomePage() {
           <h1 className="text-4xl md:text-7xl font-black font-headline tracking-tighter text-accent max-w-4xl leading-[0.9]">
             MED<span className="text-primary">TRACK</span>
           </h1>
-          <p className="text-primary text-lg md:text-xl max-w-xl mx-auto leading-relaxed font-bold mt-24 uppercase tracking-[0.2em] animate-in fade-in duration-1000">
-            Callbôx Inc. Davao
+          <p className="text-lg md:text-xl max-w-xl mx-auto leading-relaxed font-black mt-32 uppercase tracking-[0.3em] animate-in fade-in duration-1000">
+            <span className="text-primary">Callbôx</span> <span className="text-accent">Davao</span>
           </p>
         </div>
 
