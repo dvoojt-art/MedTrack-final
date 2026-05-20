@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,80 +24,92 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isBootstrapAvailable, setIsBootstrapAvailable] = useState(false);
 
-  // Check if there are any admins at all. If not, we allow a bootstrap login.
-  const checkAdminsExist = async () => {
-    if (!db) return;
-    try {
-      const q = query(collection(db, "admins"), limit(1));
-      const snap = await getDocs(q);
-      if (snap.empty) {
-        setIsBootstrapAvailable(true);
+  useEffect(() => {
+    const checkAdminsExist = async () => {
+      if (!db) return;
+      try {
+        const q = query(collection(db, "admins"), limit(1));
+        const snap = await getDocs(q);
+        if (snap.empty) {
+          setIsBootstrapAvailable(true);
+        }
+      } catch (e) {
+        // Silent fail for check
       }
-    } catch (e) {
-      console.error("Check error", e);
-    }
-  };
-
-  useState(() => {
+    };
     checkAdminsExist();
-  });
+  }, [db]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
 
     try {
       if (!db) throw new Error("Database not connected");
 
-      // 1. Check registered admins in Firestore
+      // 1. Check for specific email first to provide "Not Registered" feedback faster
       const adminsRef = collection(db, "admins");
-      const q = query(
-        adminsRef, 
-        where("email", "==", username), 
-        where("password", "==", password),
-        where("status", "==", "Active")
-      );
-      
-      const querySnapshot = await getDocs(q);
+      const emailQuery = query(adminsRef, where("email", "==", username));
+      const querySnapshot = await getDocs(emailQuery);
       
       if (!querySnapshot.empty) {
-        const adminData = querySnapshot.docs[0].data();
-        localStorage.setItem("medtrack_auth_role", adminData.role);
-        localStorage.setItem("medtrack_admin_auth", "true");
+        const adminDoc = querySnapshot.docs[0];
+        const adminData = adminDoc.data();
         
-        toast({
-          title: "Access Granted",
-          description: `Welcome, ${adminData.fullName}.`,
-        });
-        
-        router.push("/dashboard");
-        return;
+        // Verify Password & Status
+        if (adminData.password === password) {
+          if (adminData.status !== "Active") {
+            toast({
+              title: "Access Denied",
+              description: "Your account is currently inactive. Contact Super Admin.",
+              variant: "destructive",
+            });
+          } else {
+            localStorage.setItem("medtrack_auth_role", adminData.role);
+            localStorage.setItem("medtrack_admin_auth", "true");
+            toast({
+              title: "Access Granted",
+              description: `Welcome back, ${adminData.fullName}.`,
+            });
+            router.push("/dashboard");
+          }
+          setLoading(false);
+          return;
+        } else {
+          toast({
+            title: "Authentication Failed",
+            description: "The password you entered is incorrect.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
       }
 
-      // 2. Setup Fallback (Bootstrap mode)
-      // Only allowed if the 'admins' collection is completely empty
+      // 2. Not found in DB - Check Bootstrap Mode
       if (isBootstrapAvailable && username === "admin" && password === "password") {
         localStorage.setItem("medtrack_auth_role", "Super Admin");
         localStorage.setItem("medtrack_admin_auth", "true");
         toast({
           title: "Bootstrap Access",
-          description: "System initialized. Please register a real administrator.",
+          description: "Initial setup authorized. Please register a real admin.",
         });
         router.push("/dashboard");
         return;
       }
 
-      // 3. Fallback for failed attempts
+      // 3. If we get here, it means the email was not found at all
       toast({
-        title: "Access Denied",
-        description: "Invalid credentials or account inactive.",
+        title: "Account Not Found",
+        description: "This email is not registered in the system.",
         variant: "destructive",
       });
+      
     } catch (error) {
-      console.error("Login error:", error);
       toast({
         title: "System Error",
-        description: "Could not verify credentials. Check database connectivity.",
+        description: "Network timeout or database connectivity issue.",
         variant: "destructive",
       });
     } finally {
@@ -119,9 +131,9 @@ export default function LoginPage() {
         {isBootstrapAvailable && (
           <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-900 animate-in slide-in-from-top-4 duration-500">
             <AlertCircle className="h-4 w-4 text-amber-600" />
-            <AlertTitle className="font-bold">System Setup Required</AlertTitle>
+            <AlertTitle className="font-bold">System Setup Mode</AlertTitle>
             <AlertDescription className="text-xs">
-              No administrators found. Using bootstrap login: <strong>admin</strong> / <strong>password</strong>.
+              No admins found. Use: <strong>admin</strong> / <strong>password</strong>
             </AlertDescription>
           </Alert>
         )}
@@ -135,18 +147,18 @@ export default function LoginPage() {
               </div>
             </div>
             <CardTitle className="text-3xl font-bold font-headline text-primary tracking-tight">Admin Login</CardTitle>
-            <CardDescription>Managed Administrative Access</CardDescription>
+            <CardDescription>Secure Administrative Portal</CardDescription>
           </CardHeader>
           <CardContent className="px-8 pb-8 space-y-6">
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="username" className="text-xs font-bold uppercase text-muted-foreground">Admin Email</Label>
+                <Label htmlFor="username" className="text-xs font-bold uppercase text-muted-foreground">Work Email</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground/50" />
                   <Input 
                     id="username" 
-                    type="text"
-                    placeholder="Enter email" 
+                    type="email"
+                    placeholder="admin@callboxinc.com" 
                     className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -192,7 +204,7 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter className="flex flex-col items-center bg-slate-50 border-t p-6">
             <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
-              Access is restricted to registered system administrators only.
+              Access restricted to registered system administrators. Unauthorized entry is logged.
             </p>
           </CardFooter>
         </Card>
