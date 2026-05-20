@@ -25,35 +25,25 @@ export default function DashboardLayout({
     const userRole = localStorage.getItem("medtrack_auth_role");
 
     if (!isAuth) {
-      console.warn('[Dashboard] Unauthorized access attempt. Redirecting to login.');
       router.push("/login");
       return;
     }
 
     if (pathname === "/dashboard/users" && userRole !== "Super Admin") {
-      console.warn(`[Dashboard] Access denied for ${userRole} on restricted route: ${pathname}`);
       toast({
         title: "Access Denied",
-        description: "You do not have the required permissions to access User Management.",
+        description: "You do not have required permissions.",
         variant: "destructive",
       });
       router.push("/dashboard");
       return;
     }
 
-    console.log('[Dashboard] Authorization successful.');
     setIsAuthorized(true);
   }, [router, pathname, toast]);
 
   if (!isAuthorized) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-slate-700" />
-          <p className="text-xs font-black uppercase tracking-widest text-slate-700 animate-pulse">Verifying Security Credentials...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

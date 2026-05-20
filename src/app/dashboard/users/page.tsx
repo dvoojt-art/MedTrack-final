@@ -24,11 +24,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { 
   UserPlus, 
   ShieldCheck, 
-  Mail, 
   Trash2,
   ShieldAlert,
   Lock,
-  Loader2,
   Users as UsersIcon,
   Eye,
   EyeOff
@@ -78,7 +76,7 @@ export default function UserManagementPage() {
     if (!formData.fullName || !formData.email || !formData.password) {
       toast({
         title: "Validation Error",
-        description: "All fields including password are required.",
+        description: "All fields are required.",
         variant: "destructive"
       });
       return;
@@ -99,17 +97,10 @@ export default function UserManagementPage() {
       addedAt: serverTimestamp(),
     };
 
-    // 1. Immediate UI update (Optimistic)
     setFormData({ fullName: "", email: "", password: "", role: "Clinic Staff" });
     setIsDialogOpen(false);
     setShowPassword(false);
     
-    toast({
-      title: "Registration Initiated",
-      description: `${adminDataToSave.fullName} is being registered. Access will be available shortly.`,
-    });
-
-    // 2. Background Firestore call without await for faster feedback
     addDoc(collection(db, "admins"), adminDataToSave)
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
@@ -124,7 +115,6 @@ export default function UserManagementPage() {
   const removeAdmin = (id: string) => {
     if (!db) return;
     
-    // Background delete without await
     deleteDoc(doc(db, "admins", id))
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
@@ -134,7 +124,6 @@ export default function UserManagementPage() {
         errorEmitter.emit("permission-error", permissionError);
       });
 
-    // Immediate feedback
     toast({
       title: "Access Revoked",
       description: "User access is being removed.",
@@ -146,7 +135,7 @@ export default function UserManagementPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline tracking-tight text-accent">User Management</h1>
-          <p className="text-muted-foreground mt-1">Manage all system administrators and staff permissions.</p>
+          <p className="text-muted-foreground mt-1">Manage personnel permissions.</p>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -160,7 +149,7 @@ export default function UserManagementPage() {
               <DialogHeader>
                 <DialogTitle>Add System Administrator</DialogTitle>
                 <DialogDescription>
-                  Credentials created here will be required for dashboard access.
+                  Dashboard access credentials.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -240,60 +229,54 @@ export default function UserManagementPage() {
               <UsersIcon className="h-5 w-5 text-accent" />
               <CardTitle className="text-lg">Registered Access List</CardTitle>
             </div>
-            <CardDescription>Active personnel authorized to view clinical records.</CardDescription>
+            <CardDescription>Personnel authorized to view records.</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            {loading ? (
-              <div className="flex justify-center p-8">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : (
-              <Table>
-                <TableHeader className="bg-slate-50">
-                  <TableRow>
-                    <TableHead className="font-bold text-accent">Identity</TableHead>
-                    <TableHead className="font-bold text-accent">Role</TableHead>
-                    <TableHead className="font-bold text-accent text-center">Status</TableHead>
-                    <TableHead className="font-bold text-accent text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {admins && admins.length > 0 ? (
-                    admins.map((admin) => (
-                      <TableRow key={admin.id}>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium text-accent">{admin.fullName}</span>
-                            <span className="text-xs text-muted-foreground">{admin.email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="font-normal border-accent/20">
-                            {admin.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none">
-                            {admin.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => removeAdmin(admin.id)}>
-                            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
-                        No administrators registered. System is currently in bootstrap mode.
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead className="font-bold text-accent">Identity</TableHead>
+                  <TableHead className="font-bold text-accent">Role</TableHead>
+                  <TableHead className="font-bold text-accent text-center">Status</TableHead>
+                  <TableHead className="font-bold text-accent text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {admins && admins.length > 0 ? (
+                  admins.map((admin) => (
+                    <TableRow key={admin.id}>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-accent">{admin.fullName}</span>
+                          <span className="text-xs text-muted-foreground">{admin.email}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-normal border-accent/20">
+                          {admin.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none">
+                          {admin.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => removeAdmin(admin.id)}>
+                          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                        </Button>
                       </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            )}
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
+                      {loading ? "" : "No administrators registered."}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
 
@@ -307,16 +290,8 @@ export default function UserManagementPage() {
             </CardHeader>
             <CardContent className="text-xs space-y-4">
               <p className="opacity-90 leading-relaxed">
-                All administrators managed here can log in via the primary security portal.
+                Authorized access management.
               </p>
-              <div className="pt-2">
-                <p className="font-bold mb-1">Security Standards:</p>
-                <ul className="list-disc pl-4 space-y-1 opacity-80">
-                  <li>Real-time database verification.</li>
-                  <li>Instant access revocation.</li>
-                  <li>Role-based dashboard visibility.</li>
-                </ul>
-              </div>
             </CardContent>
           </Card>
 
@@ -328,7 +303,7 @@ export default function UserManagementPage() {
             </CardHeader>
             <CardContent>
               <p className="text-[10px] text-amber-800/80 leading-relaxed">
-                Ensure at least one "Super Admin" is registered before removing all other access points. Deleting your own account will result in session termination.
+                Ensure one Super Admin is registered.
               </p>
             </CardContent>
           </Card>

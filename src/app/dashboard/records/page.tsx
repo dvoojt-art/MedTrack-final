@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Download, Search, Filter, Loader2 } from "lucide-react";
+import { Download, Search, Filter } from "lucide-react";
 import { useFirestore, useCollection } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
 
@@ -73,7 +73,7 @@ export default function RecordsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline tracking-tight text-accent">Medicine Issuance Logs</h1>
-          <p className="text-muted-foreground mt-1 text-slate-500 font-medium">Real-time distribution records captured from the portal.</p>
+          <p className="text-muted-foreground mt-1 text-slate-500 font-medium">Real-time distribution records.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={exportData} disabled={loading || !records?.length} className="gap-2 border-slate-200">
@@ -100,72 +100,65 @@ export default function RecordsPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-              <Loader2 className="h-8 w-8 animate-spin mb-2 text-primary" />
-              <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Fetching records...</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader className="bg-slate-50">
-                  <TableRow>
-                    <TableHead className="w-[100px] font-bold text-slate-600 uppercase text-[10px] tracking-wider">Date</TableHead>
-                    <TableHead className="w-[80px] font-bold text-slate-600 uppercase text-[10px] tracking-wider">Time</TableHead>
-                    <TableHead className="font-bold text-slate-800 uppercase text-[10px] tracking-wider">Patient Name</TableHead>
-                    <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Email</TableHead>
-                    <TableHead className="w-[60px] font-bold text-slate-600 uppercase text-[10px] tracking-wider text-center">Age</TableHead>
-                    <TableHead className="w-[80px] font-bold text-slate-600 uppercase text-[10px] tracking-wider">Gender</TableHead>
-                    <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Department</TableHead>
-                    <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Chief Complaints</TableHead>
-                    <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Medicines</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRecords.length > 0 ? (
-                    filteredRecords.map((record, index) => (
-                      <TableRow 
-                        key={record.id || index} 
-                        className="hover:bg-primary/5 transition-colors cursor-default border-slate-100"
-                      >
-                        <TableCell className="font-medium whitespace-nowrap text-slate-500 text-xs">{record.date}</TableCell>
-                        <TableCell className="text-slate-400 whitespace-nowrap text-xs">{record.time}</TableCell>
-                        <TableCell className="font-bold text-slate-700">{record.name}</TableCell>
-                        <TableCell className="text-xs text-slate-500 font-medium">{record.email}</TableCell>
-                        <TableCell className="text-center text-slate-600">{record.age}</TableCell>
-                        <TableCell className="text-slate-500 text-xs">{record.gender}</TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="font-bold text-[10px] uppercase bg-slate-100 text-slate-600 border-none">
-                            {record.department}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="max-w-[200px]">
-                          <p className="text-xs text-slate-500 line-clamp-2 italic" title={record.chiefComplaints}>
-                            {record.chiefComplaints}
-                          </p>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {record.medicineTaken?.map((m: any, i: number) => (
-                              <span key={i} className="inline-flex items-center rounded-sm bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-slate-700 border border-primary/20">
-                                {m.name} ({m.quantity})
-                              </span>
-                            ))}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={9} className="h-48 text-center text-slate-400 font-medium italic">
-                        {searchTerm ? "No records found matching your search." : "No issuance records logged yet."}
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead className="w-[100px] font-bold text-slate-600 uppercase text-[10px] tracking-wider">Date</TableHead>
+                  <TableHead className="w-[80px] font-bold text-slate-600 uppercase text-[10px] tracking-wider">Time</TableHead>
+                  <TableHead className="font-bold text-slate-800 uppercase text-[10px] tracking-wider">Patient Name</TableHead>
+                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Email</TableHead>
+                  <TableHead className="w-[60px] font-bold text-slate-600 uppercase text-[10px] tracking-wider text-center">Age</TableHead>
+                  <TableHead className="w-[80px] font-bold text-slate-600 uppercase text-[10px] tracking-wider">Gender</TableHead>
+                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Department</TableHead>
+                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Chief Complaints</TableHead>
+                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Medicines</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRecords.length > 0 ? (
+                  filteredRecords.map((record, index) => (
+                    <TableRow 
+                      key={record.id || index} 
+                      className="hover:bg-primary/5 transition-colors cursor-default border-slate-100"
+                    >
+                      <TableCell className="font-medium whitespace-nowrap text-slate-500 text-xs">{record.date}</TableCell>
+                      <TableCell className="text-slate-400 whitespace-nowrap text-xs">{record.time}</TableCell>
+                      <TableCell className="font-bold text-slate-700">{record.name}</TableCell>
+                      <TableCell className="text-xs text-slate-500 font-medium">{record.email}</TableCell>
+                      <TableCell className="text-center text-slate-600">{record.age}</TableCell>
+                      <TableCell className="text-slate-500 text-xs">{record.gender}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="font-bold text-[10px] uppercase bg-slate-100 text-slate-600 border-none">
+                          {record.department}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-[200px]">
+                        <p className="text-xs text-slate-500 line-clamp-2 italic" title={record.chiefComplaints}>
+                          {record.chiefComplaints}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {record.medicineTaken?.map((m: any, i: number) => (
+                            <span key={i} className="inline-flex items-center rounded-sm bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-slate-700 border border-primary/20">
+                              {m.name} ({m.quantity})
+                            </span>
+                          ))}
+                        </div>
                       </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={9} className="h-48 text-center text-slate-400 font-medium italic">
+                      {loading ? "" : searchTerm ? "No records found matching your search." : "No issuance records logged yet."}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
