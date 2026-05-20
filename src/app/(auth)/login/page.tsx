@@ -20,6 +20,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -113,42 +115,42 @@ export default function LoginPage() {
     }
   };
 
-  const handleSetupSubmit = async (e: React.FormEvent) => {
+  const handleSetupSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!db) return;
     setLoading(true);
 
-    try {
-      const adminData = {
-        fullName: setupData.fullName,
-        email: setupData.email,
-        password: setupData.password,
-        role: "Super Admin",
-        status: "Active",
-        addedAt: serverTimestamp(),
-      };
+    const adminData = {
+      fullName: setupData.fullName,
+      email: setupData.email,
+      password: setupData.password,
+      role: "Super Admin",
+      status: "Active",
+      addedAt: serverTimestamp(),
+    };
 
-      await addDoc(collection(db, "admins"), adminData);
-      
-      localStorage.setItem("medtrack_auth_role", "Super Admin");
-      localStorage.setItem("medtrack_admin_auth", "true");
-      
-      toast({
-        title: "Setup Complete",
-        description: "Your administrator account has been created successfully.",
+    // Background write (optimistic)
+    addDoc(collection(db, "admins"), adminData)
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: "admins",
+          operation: "create",
+          requestResourceData: adminData,
+        });
+        errorEmitter.emit("permission-error", permissionError);
       });
-      
-      setShowSetupModal(false);
-      router.push("/dashboard");
-    } catch (error) {
-      toast({
-        title: "Setup Failed",
-        description: "Could not create administrator account.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+
+    // Immediate session start for maximum speed
+    localStorage.setItem("medtrack_auth_role", "Super Admin");
+    localStorage.setItem("medtrack_admin_auth", "true");
+    
+    toast({
+      title: "Setup Successful",
+      description: "Welcome! Your clinical portal is now active.",
+    });
+    
+    setShowSetupModal(false);
+    router.push("/dashboard");
   };
 
   return (
@@ -168,7 +170,7 @@ export default function LoginPage() {
             <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Security Check...</p>
           </div>
         ) : (
-          <Card className="border-none shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 bg-slate-50">
+          <Card className="border-none shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 bg-slate-50">
             <div className="h-2 bg-primary w-full" />
             <CardHeader className="space-y-2 text-center pb-8 pt-10">
               <div className="flex justify-center mb-4">
@@ -244,10 +246,9 @@ export default function LoginPage() {
       </div>
 
       <Dialog open={showSetupModal} onOpenChange={(open) => {
-        // Prevent closing if setup is required
         if (open || !showSetupModal) setShowSetupModal(open);
       }}>
-        <DialogContent className="sm:max-w-[425px] border-none shadow-2xl animate-in fade-in zoom-in-95 duration-200" onPointerDownOutside={(e) => e.preventDefault()}>
+        <DialogContent className="sm:max-w-[425px] border-none shadow-2xl animate-in fade-in zoom-in-95 duration-150" onPointerDownOutside={(e) => e.preventDefault()}>
           <form onSubmit={handleSetupSubmit}>
             <DialogHeader className="space-y-3">
               <div className="h-12 w-12 bg-primary/20 rounded-full flex items-center justify-center text-accent mb-2">
@@ -255,7 +256,7 @@ export default function LoginPage() {
               </div>
               <DialogTitle className="text-2xl font-bold font-headline text-accent">Initial Setup Required</DialogTitle>
               <DialogDescription className="text-slate-500">
-                No administrators found. Please add a new Super Admin to initialize the system management list.
+                No administrators found. Please add a new Super Admin to initialize the system.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-6">
@@ -296,7 +297,7 @@ export default function LoginPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="w-full h-11 bg-accent hover:bg-accent/90 text-primary font-bold shadow-md" disabled={loading}>
+              <Button type="submit" className="w-full h-11 bg-accent hover:bg-accent/90 text-primary font-bold shadow-md">
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />}
                 Complete Setup & Login
               </Button>
