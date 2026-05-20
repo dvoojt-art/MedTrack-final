@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { useAuth } from "@/firebase/provider";
 
 const ORG_DOMAIN = "callboxinc.com";
 
@@ -29,6 +31,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const db = useFirestore();
+  const auth = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -50,6 +53,19 @@ export default function LoginPage() {
   useEffect(() => {
     setIsMounted(true);
     
+    // Quick local check to skip Firestore audit if already initialized
+    const systemInitialized = localStorage.getItem("medtrack_system_initialized") === "true";
+    
+    if (systemInitialized) {
+      setIsSystemFresh(false);
+      setInitialCheckDone(true);
+      // Even if initialized, check if already authenticated locally
+      if (localStorage.getItem("medtrack_admin_auth") === "true") {
+        router.push("/dashboard");
+      }
+      return;
+    }
+
     const checkAdminsExist = async () => {
       if (!db) return;
 
@@ -66,14 +82,9 @@ export default function LoginPage() {
         } else {
           localStorage.setItem("medtrack_system_initialized", "true");
           setIsSystemFresh(false);
-
-          const isAuth = localStorage.getItem("medtrack_admin_auth") === "true";
-          if (isAuth) {
-            router.push("/dashboard");
-          }
         }
       } catch (e) {
-        // Silently handle potential init errors
+        // Fail silently to maintain clean UI
       } finally {
         setInitialCheckDone(true);
       }
@@ -99,6 +110,7 @@ export default function LoginPage() {
 
     setLoading(true);
 
+    // Provisional Bootstrap Login
     if (isSystemFresh && username.toLowerCase() === `admin@${ORG_DOMAIN}` && password === "password123") {
       localStorage.setItem("medtrack_auth_role", "Super Admin");
       localStorage.setItem("medtrack_admin_auth", "true");
@@ -107,94 +119,46 @@ export default function LoginPage() {
     }
 
     try {
-      if (!db) throw new Error("Database not connected");
+      if (!auth) throw new Error("Auth service unavailable");
 
-      const adminsRef = collection(db, "admins");
+      // Verify credentials via Firebase Auth
+      await signInWithEmailAndPassword(auth, username, password);
+
+      // Verify Role/Status in Firestore
+      const adminsRef = collection(db!, "admins");
       const emailQuery = query(adminsRef, where("email", "==", username));
       const querySnapshot = await getDocs(emailQuery);
       
       if (!querySnapshot.empty) {
-        const adminDoc = querySnapshot.docs[0];
-        const adminData = adminDoc.data();
-        
-        if (adminData.password === password) {
-          if (adminData.status !== "Active") {
-            toast({
-              title: "Access Denied",
-              description: "Account inactive.",
-              variant: "destructive",
-            });
-          } else {
-            localStorage.setItem("medtrack_auth_role", adminData.role);
-            localStorage.setItem("medtrack_admin_auth", "true");
-            router.push("/dashboard");
-          }
-        } else {
+        const adminData = querySnapshot.docs[0].data();
+        if (adminData.status !== "Active") {
           toast({
-            title: "Authentication Failed",
-            description: "Incorrect password.",
+            title: "Access Denied",
+            description: "Account inactive.",
             variant: "destructive",
           });
+        } else {
+          localStorage.setItem("medtrack_auth_role", adminData.role);
+          localStorage.setItem("medtrack_admin_auth", "true");
+          localStorage.setItem("medtrack_system_initialized", "true");
+          router.push("/dashboard");
         }
       } else {
         toast({
-          title: "Account Not Recognized",
-          description: "This email is not registered.",
+          title: "Access Denied",
+          description: "Administrative profile not found.",
           variant: "destructive",
-            });
+        });
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "System Error",
-        description: "Could not connect to services.",
+        title: "Authentication Failed",
+        description: error.message || "Incorrect email or password.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSetupSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!db) return;
-
-    if (!setupData.email.toLowerCase().endsWith(`@${ORG_DOMAIN}`)) {
-      toast({
-        title: "Invalid Domain",
-        description: `Official registration requires an @${ORG_DOMAIN} email.`,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    const adminData = {
-      fullName: setupData.fullName,
-      email: setupData.email,
-      password: setupData.password,
-      role: "Super Admin",
-      status: "Active",
-      addedAt: serverTimestamp(),
-    };
-
-    addDoc(collection(db, "admins"), adminData)
-      .then(() => {
-        localStorage.setItem("medtrack_auth_role", "Super Admin");
-        localStorage.setItem("medtrack_admin_auth", "true");
-        localStorage.setItem("medtrack_system_initialized", "true");
-        setShowSetupModal(false);
-        router.push("/dashboard");
-      })
-      .catch((error) => {
-        const permissionError = new FirestorePermissionError({
-          path: "admins",
-          operation: "create",
-          requestResourceData: adminData,
-        });
-        errorEmitter.emit("permission-error", permissionError);
-        setLoading(false);
-      });
   };
 
   if (!isMounted || !initialCheckDone) {
@@ -316,65 +280,6 @@ export default function LoginPage() {
           </Card>
         </div>
       </div>
-
-      <Dialog open={showSetupModal} onOpenChange={setShowSetupModal}>
-        <DialogContent className="sm:max-w-[425px]" onPointerDownOutside={(e) => e.preventDefault()}>
-          <form onSubmit={handleSetupSubmit}>
-            <DialogHeader className="space-y-3">
-              <div className="h-12 w-12 bg-primary/20 rounded-full flex items-center justify-center text-accent mb-2">
-                <ShieldAlert className="h-6 w-6" />
-              </div>
-              <DialogTitle className="text-2xl font-bold font-headline text-accent">Facility Initialization</DialogTitle>
-              <DialogDescription className="text-slate-500">
-                Register a primary Super Admin with an official @{ORG_DOMAIN} address.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-6">
-              <div className="space-y-2">
-                <Label htmlFor="setup-name" className="text-xs font-bold uppercase text-slate-500">Full Name</Label>
-                <Input 
-                  id="setup-name" 
-                  placeholder="Clinical Manager" 
-                  className="h-11 border-slate-200"
-                  value={setupData.fullName}
-                  onChange={(e) => setSetupData({...setupData, fullName: e.target.value})}
-                  required 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="setup-email" className="text-xs font-bold uppercase text-slate-500">Organization Email</Label>
-                <Input 
-                  id="setup-email" 
-                  type="email"
-                  placeholder={`admin@${ORG_DOMAIN}`} 
-                  className="h-11 border-slate-200"
-                  value={setupData.email}
-                  onChange={(e) => setSetupData({...setupData, email: e.target.value})}
-                  required 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="setup-password" className="text-xs font-bold uppercase text-slate-500">Master Password</Label>
-                <Input 
-                  id="setup-password" 
-                  type="password"
-                  placeholder="Assign secure credential" 
-                  className="h-11 border-slate-200"
-                  value={setupData.password}
-                  onChange={(e) => setSetupData({...setupData, password: e.target.value})}
-                  required 
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" className="w-full h-11 bg-accent hover:bg-accent/90 text-primary font-bold shadow-md">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />}
-                Complete Clinical Initialization
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
