@@ -32,7 +32,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showSetupModal, setShowSetupModal] = useState(false);
-  const [initialCheckDone, setInitialCheckDone] = useState(false);
+  
+  // High-speed state initialization
+  const [initialCheckDone, setInitialCheckDone] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("medtrack_system_initialized") === "true";
+    }
+    return false;
+  });
 
   // Setup form state
   const [setupData, setSetupData] = useState({
@@ -49,18 +56,13 @@ export default function LoginPage() {
       return;
     }
 
-    // 2. Persistent Initialization Check
-    const isInitialized = localStorage.getItem("medtrack_system_initialized") === "true";
-    if (isInitialized) {
-      setInitialCheckDone(true);
-    }
-
-    // 3. High-speed Admin Existence Check (Background)
+    // 2. High-speed Admin Existence Check (Background)
     const checkAdminsExist = async () => {
       if (!db) return;
       try {
         const q = query(collection(db, "admins"), limit(1));
         const snap = await getDocs(q);
+        
         if (snap.empty) {
           setShowSetupModal(true);
           localStorage.removeItem("medtrack_system_initialized");
@@ -174,7 +176,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-4">
       <div className="absolute top-6 left-6">
-        <Button variant="ghost" asChild className="text-slate-500 hover:text-primary font-bold transition-colors">
+        <Button variant="ghost" asChild className="text-slate-600 hover:text-primary font-bold transition-colors">
           <Link href="/" className="gap-2 text-xs font-semibold uppercase tracking-wider">
             <ArrowLeft className="h-4 w-4" /> Public Portal
           </Link>
@@ -185,7 +187,7 @@ export default function LoginPage() {
         {!initialCheckDone ? (
           <div className="flex flex-col items-center justify-center space-y-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Security Check...</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Security Check...</p>
           </div>
         ) : (
           <Card className="border-none shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 bg-slate-50">
@@ -197,7 +199,7 @@ export default function LoginPage() {
                 </div>
               </div>
               <CardTitle className="text-3xl font-bold font-headline text-accent tracking-tight uppercase">Admin Portal</CardTitle>
-              <CardDescription className="text-slate-400 font-medium">Secure Clinical Management Access</CardDescription>
+              <CardDescription className="text-slate-500 font-medium">Secure Clinical Management Access</CardDescription>
             </CardHeader>
             <CardContent className="px-8 pb-8 space-y-6">
               <form onSubmit={handleLogin} className="space-y-5">
@@ -255,7 +257,7 @@ export default function LoginPage() {
               </form>
             </CardContent>
             <CardFooter className="flex flex-col items-center bg-slate-100 border-t p-6">
-              <p className="text-[10px] text-slate-400 text-center leading-relaxed font-bold uppercase tracking-widest">
+              <p className="text-[10px] text-slate-500 text-center leading-relaxed font-bold uppercase tracking-widest">
                 Authorized access only. Security event logged.
               </p>
             </CardFooter>
