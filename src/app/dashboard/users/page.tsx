@@ -49,6 +49,8 @@ import {
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
+const ORG_DOMAIN = "callboxinc.com";
+
 export default function UserManagementPage() {
   const db = useFirestore();
   const { toast } = useToast();
@@ -77,6 +79,15 @@ export default function UserManagementPage() {
       toast({
         title: "Validation Error",
         description: "All fields including password are required.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.email.toLowerCase().endsWith(`@${ORG_DOMAIN}`)) {
+      toast({
+        title: "Unauthorized Organization",
+        description: `Only users with @${ORG_DOMAIN} emails can be registered.`,
         variant: "destructive"
       });
       return;
@@ -168,7 +179,7 @@ export default function UserManagementPage() {
                   <Input 
                     id="email" 
                     type="email" 
-                    placeholder="e.g. admin@callboxinc.com" 
+                    placeholder={`e.g. admin@${ORG_DOMAIN}`} 
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                     required

@@ -23,6 +23,8 @@ import {
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
+const ORG_DOMAIN = "callboxinc.com";
+
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -126,7 +128,7 @@ export default function LoginPage() {
           title: "Account Not Registered",
           description: "This email is not recognized by the system.",
           variant: "destructive",
-        });
+            });
       }
     } catch (error) {
       toast({
@@ -142,6 +144,16 @@ export default function LoginPage() {
   const handleSetupSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!db) return;
+
+    if (!setupData.email.toLowerCase().endsWith(`@${ORG_DOMAIN}`)) {
+      toast({
+        title: "Invalid Organization",
+        description: `Setup requires an official @${ORG_DOMAIN} email address.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
 
     const adminData = {
@@ -228,7 +240,7 @@ export default function LoginPage() {
                     <Input 
                       id="username" 
                       type="text"
-                      placeholder="Enter your email" 
+                      placeholder={`Enter your @${ORG_DOMAIN} email`} 
                       className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20 bg-white"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
@@ -292,7 +304,7 @@ export default function LoginPage() {
               </div>
               <DialogTitle className="text-2xl font-bold font-headline text-accent">Initial Setup Required</DialogTitle>
               <DialogDescription className="text-slate-500">
-                No administrators found. Please add a new Super Admin to initialize the system.
+                No administrators found. Please add a new Super Admin with an official @{ORG_DOMAIN} email to initialize the system.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-6">
@@ -312,7 +324,7 @@ export default function LoginPage() {
                 <Input 
                   id="setup-email" 
                   type="email"
-                  placeholder="admin@medtrack.com" 
+                  placeholder={`admin@${ORG_DOMAIN}`} 
                   className="h-11 border-slate-200"
                   value={setupData.email}
                   onChange={(e) => setSetupData({...setupData, email: e.target.value})}

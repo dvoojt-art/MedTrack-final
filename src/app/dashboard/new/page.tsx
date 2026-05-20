@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -25,6 +26,8 @@ const DEPARTMENTS = [
   "IT",
   "OJT"
 ];
+
+const ORG_DOMAIN = "callboxinc.com";
 
 export default function NewRecordPage() {
   const router = useRouter();
@@ -80,6 +83,15 @@ export default function NewRecordPage() {
       toast({
         title: "Missing Information",
         description: "All fields are required. Please fill in all employee and medicine details.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.email.toLowerCase().endsWith(`@${ORG_DOMAIN}`)) {
+      toast({
+        title: "Invalid Email",
+        description: `Only ${ORG_DOMAIN} emails are accepted.`,
         variant: "destructive"
       });
       return;
@@ -152,7 +164,7 @@ export default function NewRecordPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold font-headline tracking-tight text-primary">New Issuance Log</h1>
+          <h1 className="text-3xl font-bold font-headline tracking-tight text-accent">New Issuance Log</h1>
           <p className="text-muted-foreground mt-1">Record a new medicine distribution for an employee.</p>
         </div>
       </div>
@@ -181,7 +193,7 @@ export default function NewRecordPage() {
                     <Input 
                       id="email" 
                       type="email"
-                      placeholder="employee@callboxinc.com" 
+                      placeholder={`employee@${ORG_DOMAIN}`} 
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       required

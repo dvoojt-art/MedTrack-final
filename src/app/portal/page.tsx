@@ -27,6 +27,8 @@ const DEPARTMENTS = [
   "OJT"
 ];
 
+const ORG_DOMAIN = "callboxinc.com";
+
 export default function PublicPortalPage() {
   const { toast } = useToast();
   const db = useFirestore();
@@ -80,6 +82,15 @@ export default function PublicPortalPage() {
       toast({
         title: "Incomplete Form",
         description: "Please fill in all employee and medicine details before recording.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.email.toLowerCase().endsWith(`@${ORG_DOMAIN}`)) {
+      toast({
+        title: "Invalid Email",
+        description: `Only ${ORG_DOMAIN} emails are accepted for this organization.`,
         variant: "destructive"
       });
       return;
@@ -203,7 +214,7 @@ export default function PublicPortalPage() {
                     <Input 
                       id="email" 
                       type="email"
-                      placeholder="employee@callboxinc.com" 
+                      placeholder={`employee@${ORG_DOMAIN}`} 
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       required
