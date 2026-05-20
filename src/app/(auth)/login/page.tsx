@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Lock, User, ArrowLeft, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { ShieldCheck, Lock, User, ArrowLeft, Loader2, AlertCircle, Eye, EyeOff, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useFirestore } from "@/firebase";
@@ -52,8 +52,8 @@ export default function LoginPage() {
         localStorage.setItem("medtrack_auth_role", "Super Admin");
         localStorage.setItem("medtrack_admin_auth", "true");
         toast({
-          title: "Bootstrap Access",
-          description: "Initial setup authorized. Please register a real admin.",
+          title: "Bootstrap Access Granted",
+          description: "Initial setup authorized. Please proceed to register a real admin.",
         });
         router.push("/dashboard");
         return;
@@ -101,7 +101,7 @@ export default function LoginPage() {
       toast({
         title: "Account Not Found",
         description: isBootstrapAvailable 
-          ? "Enter 'admin' for initial setup or check your email."
+          ? "Please use 'admin' and 'password' to setup your first administrator."
           : "This email is not registered in the system.",
         variant: "destructive",
       });
@@ -130,10 +130,11 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-4">
         {isBootstrapAvailable && (
           <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-900 animate-in slide-in-from-top-4 duration-500">
-            <AlertCircle className="h-4 w-4 text-amber-600" />
-            <AlertTitle className="font-bold">System Setup Mode</AlertTitle>
-            <AlertDescription className="text-xs">
-              No admins found. Use: <strong>admin</strong> / <strong>password</strong>
+            <UserPlus className="h-5 w-5 text-amber-600" />
+            <AlertTitle className="font-bold">Initial Setup Required</AlertTitle>
+            <AlertDescription className="text-sm">
+              No administrators registered yet. Please <strong>register an admin</strong> by logging in with: <br />
+              User: <code className="bg-amber-100 px-1 rounded">admin</code> | Pass: <code className="bg-amber-100 px-1 rounded">password</code>
             </AlertDescription>
           </Alert>
         )}
@@ -153,7 +154,7 @@ export default function LoginPage() {
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="username" className="text-xs font-bold uppercase text-muted-foreground">
-                  {isBootstrapAvailable ? "Email or Username" : "Work Email"}
+                  {isBootstrapAvailable ? "Username or Email" : "Work Email"}
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground/50" />
@@ -199,7 +200,7 @@ export default function LoginPage() {
                     Verifying...
                   </>
                 ) : (
-                  "Access Dashboard"
+                  isBootstrapAvailable ? "Start Setup" : "Access Dashboard"
                 )}
               </Button>
             </form>
