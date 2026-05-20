@@ -19,11 +19,14 @@ export function useCollection(query: Query | null) {
 
   useEffect(() => {
     if (!query) {
+      console.log('[Firestore] useCollection: No query provided, idle.');
       setLoading(false);
       return;
     }
 
     setLoading(true);
+    console.log('[Firestore] useCollection: Listening to query...');
+    
     const unsubscribe = onSnapshot(
       query,
       (snapshot: QuerySnapshot) => {
@@ -31,10 +34,12 @@ export function useCollection(query: Query | null) {
           id: doc.id,
           ...doc.data(),
         }));
+        console.log(`[Firestore] useCollection: Snapshot received. Docs count: ${docs.length}`);
         setData(docs);
         setLoading(false);
       },
       async (serverError: FirestoreError) => {
+        console.error('[Firestore] useCollection: Permission error or listener failure:', serverError);
         const permissionError = new FirestorePermissionError({
           path: (query as any)._query?.path?.toString() || 'unknown',
           operation: 'list',
@@ -45,7 +50,10 @@ export function useCollection(query: Query | null) {
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      console.log('[Firestore] useCollection: Unsubscribing from query.');
+      unsubscribe();
+    };
   }, [query]);
 
   return { data, loading, error };

@@ -25,7 +25,10 @@ export default function InsightsPage() {
   const { data: records, loading: recordsLoading } = useCollection(issuancesQuery);
 
   const generateInsights = async () => {
+    console.log('[Genkit] Initiating AI Inventory Analysis...');
+    
     if (!records || records.length === 0) {
+      console.warn('[Genkit] Insight generation failed: No historical records found in database.');
       toast({
         title: "Insufficient Data",
         description: "There are no medicine issuance records available to analyze yet.",
@@ -36,7 +39,6 @@ export default function InsightsPage() {
 
     setLoading(true);
     try {
-      // Map Firestore data to the expected format for the AI flow
       const formattedRecords = records.map(r => ({
         date: r.date,
         time: r.time,
@@ -48,13 +50,19 @@ export default function InsightsPage() {
         medicineTaken: r.medicineTaken || [],
       }));
 
+      console.log(`[Genkit] Sending ${formattedRecords.length} records to AI flow.`);
+      
       const result = await getRestockRecommendations({ records: formattedRecords });
+      
+      console.log('[Genkit] AI analysis successful. Received recommendations:', result.recommendations.length);
       setInsights(result);
+      
       toast({
         title: "Analysis Complete",
         description: "AI tool has finished analyzing your clinical data trends.",
       });
     } catch (error) {
+      console.error('[Genkit] Insight generation error:', error);
       toast({
         title: "Analysis Failed",
         description: "Could not generate insights at this time. Please try again later.",

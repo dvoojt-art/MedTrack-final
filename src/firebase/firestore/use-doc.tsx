@@ -19,18 +19,23 @@ export function useDoc(docRef: DocumentReference | null) {
 
   useEffect(() => {
     if (!docRef) {
+      console.log('[Firestore] useDoc: No document reference provided, idle.');
       setLoading(false);
       return;
     }
 
     setLoading(true);
+    console.log('[Firestore] useDoc: Listening to document:', docRef.path);
+
     const unsubscribe = onSnapshot(
       docRef,
       (snapshot: DocumentSnapshot) => {
+        console.log(`[Firestore] useDoc: Snapshot received for: ${docRef.path}. Exists: ${snapshot.exists()}`);
         setData(snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null);
         setLoading(false);
       },
       async (serverError: FirestoreError) => {
+        console.error('[Firestore] useDoc: Error fetching document:', serverError);
         const permissionError = new FirestorePermissionError({
           path: docRef.path,
           operation: 'get',
@@ -41,7 +46,10 @@ export function useDoc(docRef: DocumentReference | null) {
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      console.log('[Firestore] useDoc: Unsubscribing from document:', docRef.path);
+      unsubscribe();
+    };
   }, [docRef]);
 
   return { data, loading, error };

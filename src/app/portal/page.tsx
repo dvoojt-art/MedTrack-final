@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,10 @@ export default function PublicPortalPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  useEffect(() => {
+    console.log('[Portal] Entry portal mounted.');
+  }, []);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -69,6 +73,7 @@ export default function PublicPortalPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[Portal] Initiating issuance submission...');
     
     const isMedicinesValid = medicines.every(m => m.name.trim() !== "" && m.dosage.trim() !== "" && m.quantity > 0);
     const isFormValid = 
@@ -79,6 +84,7 @@ export default function PublicPortalPage() {
       formData.chiefComplaints.trim() !== "";
 
     if (!isFormValid || !isMedicinesValid) {
+      console.warn('[Portal] Submission blocked: Incomplete form data.');
       toast({
         title: "Incomplete Form",
         description: "Please fill in all employee and medicine details before recording.",
@@ -88,6 +94,7 @@ export default function PublicPortalPage() {
     }
 
     if (!formData.email.toLowerCase().endsWith(`@${ORG_DOMAIN}`)) {
+      console.warn('[Portal] Submission blocked: Invalid email domain:', formData.email);
       toast({
         title: "Invalid Email",
         description: `Only ${ORG_DOMAIN} emails are accepted for this organization.`,
@@ -96,7 +103,11 @@ export default function PublicPortalPage() {
       return;
     }
 
-    if (!db) return;
+    if (!db) {
+      console.error('[Portal] Submission error: Firestore instance not available.');
+      return;
+    }
+    
     setIsSubmitting(true);
 
     const now = new Date();
@@ -112,9 +123,14 @@ export default function PublicPortalPage() {
       createdAt: serverTimestamp(),
     };
 
-    // Optimistic background save
+    console.log('[Portal] Saving record to Firestore...');
+    
     addDoc(collection(db, "issuances"), record)
+      .then((docRef) => {
+        console.log('[Portal] Record successfully saved. ID:', docRef.id);
+      })
       .catch(async (error) => {
+        console.error('[Portal] Firestore write error:', error);
         const permissionError = new FirestorePermissionError({
           path: "issuances",
           operation: "create",
@@ -123,7 +139,6 @@ export default function PublicPortalPage() {
         errorEmitter.emit("permission-error", permissionError);
       });
 
-    // Immediate feedback
     setSubmittedRecord(record);
     setIsSuccess(true);
     setIsSubmitting(false);
@@ -144,6 +159,7 @@ export default function PublicPortalPage() {
         <ReceiptView 
           record={submittedRecord} 
           onClose={() => {
+            console.log('[Portal] Receipt closed. Resetting form.');
             setShowReceipt(false);
             setFormData({
               name: "",

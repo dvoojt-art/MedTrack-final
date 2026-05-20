@@ -19,17 +19,19 @@ export default function DashboardLayout({
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check for demo authentication
+    console.log('[Dashboard] Authorization check for path:', pathname);
+    
     const isAuth = localStorage.getItem("medtrack_admin_auth") === "true";
     const userRole = localStorage.getItem("medtrack_auth_role");
 
     if (!isAuth) {
+      console.warn('[Dashboard] Unauthorized access attempt. Redirecting to login.');
       router.push("/login");
       return;
     }
 
-    // Protect User Management route
     if (pathname === "/dashboard/users" && userRole !== "Super Admin") {
+      console.warn(`[Dashboard] Access denied for ${userRole} on restricted route: ${pathname}`);
       toast({
         title: "Access Denied",
         description: "You do not have the required permissions to access User Management.",
@@ -39,6 +41,7 @@ export default function DashboardLayout({
       return;
     }
 
+    console.log('[Dashboard] Authorization successful.');
     setIsAuthorized(true);
   }, [router, pathname, toast]);
 

@@ -35,11 +35,9 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showSetupModal, setShowSetupModal] = useState(false);
   
-  // Hydration-safe state initialization
   const [isMounted, setIsMounted] = useState(false);
   const [initialCheckDone, setInitialCheckDone] = useState(false);
 
-  // Setup form state
   const [setupData, setSetupData] = useState({
     fullName: "",
     email: "",
@@ -48,35 +46,41 @@ export default function LoginPage() {
 
   useEffect(() => {
     setIsMounted(true);
+    console.log('[Auth] Login page mounted.');
     
-    // 1. Immediate Session Check
     const isAuth = localStorage.getItem("medtrack_admin_auth") === "true";
     if (isAuth) {
+      console.log('[Auth] Existing session found, redirecting to dashboard.');
       router.push("/dashboard");
       return;
     }
 
-    // 2. High-speed check for local initialization flag
     const wasInitialized = localStorage.getItem("medtrack_system_initialized") === "true";
     if (wasInitialized) {
       setInitialCheckDone(true);
     }
 
-    // 3. Background Admin Existence Check
     const checkAdminsExist = async () => {
-      if (!db) return;
+      if (!db) {
+        console.warn('[Auth] Database connection not ready for admin check.');
+        return;
+      }
       try {
+        console.log('[Auth] Checking for existing administrators...');
         const q = query(collection(db, "admins"), limit(1));
         const snap = await getDocs(q);
         
         if (snap.empty) {
+          console.log('[Auth] No administrators found. System bootstrap required.');
           setShowSetupModal(true);
           localStorage.removeItem("medtrack_system_initialized");
         } else {
+          console.log('[Auth] Administrators found. System is initialized.');
           localStorage.setItem("medtrack_system_initialized", "true");
         }
         setInitialCheckDone(true);
       } catch (e) {
+        console.error('[Auth] Error checking for administrators:', e);
         setInitialCheckDone(true);
       }
     };
@@ -88,6 +92,8 @@ export default function LoginPage() {
     e.preventDefault();
     if (loading) return;
     setLoading(true);
+
+    console.log('[Auth] Login attempt for user:', username);
 
     try {
       if (!db) throw new Error("Database not connected");
@@ -102,12 +108,14 @@ export default function LoginPage() {
         
         if (adminData.password === password) {
           if (adminData.status !== "Active") {
+            console.warn('[Auth] Account found but is inactive:', username);
             toast({
               title: "Access Denied",
               description: "Account inactive. Please contact system manager.",
               variant: "destructive",
             });
           } else {
+            console.log('[Auth] Authentication successful for:', username);
             localStorage.setItem("medtrack_auth_role", adminData.role);
             localStorage.setItem("medtrack_admin_auth", "true");
             toast({
@@ -117,6 +125,7 @@ export default function LoginPage() {
             router.push("/dashboard");
           }
         } else {
+          console.warn('[Auth] Invalid password for:', username);
           toast({
             title: "Authentication Failed",
             description: "Incorrect password. Please try again.",
@@ -124,6 +133,7 @@ export default function LoginPage() {
           });
         }
       } else {
+        console.warn('[Auth] Account not found for email:', username);
         toast({
           title: "Account Not Registered",
           description: "This email is not recognized by the system.",
@@ -131,6 +141,7 @@ export default function LoginPage() {
             });
       }
     } catch (error) {
+      console.error('[Auth] Login processing error:', error);
       toast({
         title: "System Error",
         description: "Could not connect to authentication services.",
@@ -145,7 +156,10 @@ export default function LoginPage() {
     e.preventDefault();
     if (!db) return;
 
+    console.log('[Auth] Initiating system setup for:', setupData.email);
+
     if (!setupData.email.toLowerCase().endsWith(`@${ORG_DOMAIN}`)) {
+      console.warn('[Auth] Setup failed: Email domain restriction violation.', setupData.email);
       toast({
         title: "Invalid Organization",
         description: `Setup requires an official @${ORG_DOMAIN} email address.`,
@@ -165,9 +179,12 @@ export default function LoginPage() {
       addedAt: serverTimestamp(),
     };
 
-    // Background write (optimistic)
     addDoc(collection(db, "admins"), adminData)
-      .catch(async (error) => {
+      .then(() => {
+        console.log('[Auth] Initial Super Admin created in database.');
+      })
+      .catch((error) => {
+        console.error('[Auth] Error creating initial admin:', error);
         const permissionError = new FirestorePermissionError({
           path: "admins",
           operation: "create",
@@ -176,11 +193,12 @@ export default function LoginPage() {
         errorEmitter.emit("permission-error", permissionError);
       });
 
-    // Immediate session start for maximum speed
     localStorage.setItem("medtrack_auth_role", "Super Admin");
     localStorage.setItem("medtrack_admin_auth", "true");
     localStorage.setItem("medtrack_system_initialized", "true");
     
+    console.log('[Auth] Setup completed. Starting session.');
+
     toast({
       title: "Setup Successful",
       description: "Welcome! Your clinical portal is now active.",
