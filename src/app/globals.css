@@ -5,7 +5,7 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
+    --background: 0 0% 100%;
     --foreground: 215 25% 15%;
     
     --card: 0 0% 100%;
@@ -18,13 +18,13 @@
     --primary: 47 100% 52%;
     --primary-foreground: 215 25% 10%;
     
-    --secondary: 210 20% 95%;
+    --secondary: 210 20% 96%;
     --secondary-foreground: 215 25% 20%;
     
     --muted: 215 15% 92%;
     --muted-foreground: 215 15% 44%;
     
-    /* Accent - Slate Charcoal Gray */
+    /* Accent - Slate Gray #334155 */
     --accent: 215 25% 27%;
     --accent-foreground: 47 100% 52%;
     

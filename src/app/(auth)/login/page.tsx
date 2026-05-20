@@ -25,7 +25,6 @@ export default function LoginPage() {
   const [isBootstrapAvailable, setIsBootstrapAvailable] = useState(false);
 
   useEffect(() => {
-    // Automatically check if the system needs initial setup
     const checkAdminsExist = async () => {
       if (!db) return;
       try {
@@ -49,7 +48,6 @@ export default function LoginPage() {
     try {
       if (!db) throw new Error("Database not connected");
 
-      // 1. Check Bootstrap Mode First (Highest Priority for Setup)
       if (isBootstrapAvailable && username === "admin" && password === "password") {
         localStorage.setItem("medtrack_auth_role", "Super Admin");
         localStorage.setItem("medtrack_admin_auth", "true");
@@ -61,7 +59,6 @@ export default function LoginPage() {
         return;
       }
 
-      // 2. Database Lookup for Registered Admins
       const adminsRef = collection(db, "admins");
       const emailQuery = query(adminsRef, where("email", "==", username));
       const querySnapshot = await getDocs(emailQuery);
@@ -86,28 +83,20 @@ export default function LoginPage() {
             });
             router.push("/dashboard");
           }
-          setLoading(false);
-          return;
         } else {
           toast({
             title: "Authentication Failed",
             description: "Incorrect password. Please try again.",
             variant: "destructive",
           });
-          setLoading(false);
-          return;
         }
+      } else {
+        toast({
+          title: "Account Not Registered",
+          description: "This account is not recognized by the system.",
+          variant: "destructive",
+        });
       }
-
-      // 3. Not registered prompt
-      toast({
-        title: "Account Not Registered",
-        description: isBootstrapAvailable 
-          ? "System is uninitialized. Use setup credentials provided in the alert."
-          : "This account is not recognized by the system.",
-        variant: "destructive",
-      });
-      
     } catch (error) {
       toast({
         title: "System Error",
@@ -122,7 +111,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
       <div className="absolute top-6 left-6">
-        <Button variant="ghost" asChild className="text-slate-500 hover:text-primary">
+        <Button variant="ghost" asChild className="text-slate-600 hover:text-primary font-bold">
           <Link href="/" className="gap-2 text-xs font-semibold uppercase tracking-wider">
             <ArrowLeft className="h-4 w-4" /> Public Portal
           </Link>
@@ -131,11 +120,11 @@ export default function LoginPage() {
       
       <div className="w-full max-w-md space-y-4">
         {isBootstrapAvailable && (
-          <Alert className="bg-primary/20 border-primary text-slate-800 animate-in slide-in-from-top-4 duration-500 shadow-lg">
+          <Alert className="bg-primary border-slate-700 text-slate-800 animate-in slide-in-from-top-4 duration-500 shadow-lg">
             <UserPlus className="h-5 w-5 text-slate-800" />
             <AlertTitle className="font-bold">Initial Setup Required</AlertTitle>
             <AlertDescription className="text-sm font-medium">
-              No administrators found. Log in with default setup credentials: <br />
+              No administrators found. Log in with setup credentials: <br />
               <strong>User:</strong> admin | <strong>Pass:</strong> password
             </AlertDescription>
           </Alert>
@@ -145,11 +134,11 @@ export default function LoginPage() {
           <div className="h-2 bg-primary w-full" />
           <CardHeader className="space-y-2 text-center pb-8 pt-10">
             <div className="flex justify-center mb-4">
-              <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center border-4 border-slate-50 shadow-sm">
+              <div className="h-16 w-16 bg-primary rounded-full flex items-center justify-center border-4 border-slate-50 shadow-sm">
                 <ShieldCheck className="h-8 w-8 text-slate-700" />
               </div>
             </div>
-            <CardTitle className="text-3xl font-bold font-headline text-slate-800 tracking-tight">Admin Portal</CardTitle>
+            <CardTitle className="text-3xl font-bold font-headline text-slate-800 tracking-tight uppercase">Admin Portal</CardTitle>
             <CardDescription className="text-slate-500 font-medium">Secure Clinical Management Access</CardDescription>
           </CardHeader>
           <CardContent className="px-8 pb-8 space-y-6">

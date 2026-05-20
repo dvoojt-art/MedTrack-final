@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -166,7 +167,7 @@ export default function PublicPortalPage() {
           </div>
           <h1 className="text-xl font-bold text-slate-700 font-headline">Clinic Entry Portal</h1>
         </div>
-        <Button variant="ghost" size="sm" asChild className="text-slate-400 hover:text-primary">
+        <Button variant="ghost" size="sm" asChild className="text-slate-600 hover:text-primary font-semibold">
           <Link href="/" className="gap-2">
             <Home className="h-4 w-4" /> Exit to Home
           </Link>
