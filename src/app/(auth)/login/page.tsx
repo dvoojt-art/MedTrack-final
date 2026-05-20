@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -48,7 +47,19 @@ export default function LoginPage() {
     try {
       if (!db) throw new Error("Database not connected");
 
-      // 1. Check for specific email first to provide "Not Registered" feedback faster
+      // 1. Check Bootstrap Mode First (Highest Priority for Setup)
+      if (isBootstrapAvailable && username === "admin" && password === "password") {
+        localStorage.setItem("medtrack_auth_role", "Super Admin");
+        localStorage.setItem("medtrack_admin_auth", "true");
+        toast({
+          title: "Bootstrap Access",
+          description: "Initial setup authorized. Please register a real admin.",
+        });
+        router.push("/dashboard");
+        return;
+      }
+
+      // 2. Database Lookup for Registered Admins
       const adminsRef = collection(db, "admins");
       const emailQuery = query(adminsRef, where("email", "==", username));
       const querySnapshot = await getDocs(emailQuery);
@@ -57,7 +68,6 @@ export default function LoginPage() {
         const adminDoc = querySnapshot.docs[0];
         const adminData = adminDoc.data();
         
-        // Verify Password & Status
         if (adminData.password === password) {
           if (adminData.status !== "Active") {
             toast({
@@ -87,22 +97,12 @@ export default function LoginPage() {
         }
       }
 
-      // 2. Not found in DB - Check Bootstrap Mode
-      if (isBootstrapAvailable && username === "admin" && password === "password") {
-        localStorage.setItem("medtrack_auth_role", "Super Admin");
-        localStorage.setItem("medtrack_admin_auth", "true");
-        toast({
-          title: "Bootstrap Access",
-          description: "Initial setup authorized. Please register a real admin.",
-        });
-        router.push("/dashboard");
-        return;
-      }
-
-      // 3. If we get here, it means the email was not found at all
+      // 3. Not found anywhere
       toast({
         title: "Account Not Found",
-        description: "This email is not registered in the system.",
+        description: isBootstrapAvailable 
+          ? "Enter 'admin' for initial setup or check your email."
+          : "This email is not registered in the system.",
         variant: "destructive",
       });
       
@@ -152,13 +152,15 @@ export default function LoginPage() {
           <CardContent className="px-8 pb-8 space-y-6">
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="username" className="text-xs font-bold uppercase text-muted-foreground">Work Email</Label>
+                <Label htmlFor="username" className="text-xs font-bold uppercase text-muted-foreground">
+                  {isBootstrapAvailable ? "Email or Username" : "Work Email"}
+                </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground/50" />
                   <Input 
                     id="username" 
-                    type="email"
-                    placeholder="admin@callboxinc.com" 
+                    type="text"
+                    placeholder={isBootstrapAvailable ? "admin" : "admin@callboxinc.com"} 
                     className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
