@@ -49,7 +49,13 @@ export default function LoginPage() {
       return;
     }
 
-    // 2. High-speed Admin Existence Check
+    // 2. Persistent Initialization Check
+    const isInitialized = localStorage.getItem("medtrack_system_initialized") === "true";
+    if (isInitialized) {
+      setInitialCheckDone(true);
+    }
+
+    // 3. High-speed Admin Existence Check (Background)
     const checkAdminsExist = async () => {
       if (!db) return;
       try {
@@ -57,6 +63,9 @@ export default function LoginPage() {
         const snap = await getDocs(q);
         if (snap.empty) {
           setShowSetupModal(true);
+          localStorage.removeItem("medtrack_system_initialized");
+        } else {
+          localStorage.setItem("medtrack_system_initialized", "true");
         }
         setInitialCheckDone(true);
       } catch (e) {
@@ -151,6 +160,7 @@ export default function LoginPage() {
     // Immediate session start for maximum speed
     localStorage.setItem("medtrack_auth_role", "Super Admin");
     localStorage.setItem("medtrack_admin_auth", "true");
+    localStorage.setItem("medtrack_system_initialized", "true");
     
     toast({
       title: "Setup Successful",
@@ -164,7 +174,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-4">
       <div className="absolute top-6 left-6">
-        <Button variant="ghost" asChild className="text-slate-600 hover:text-primary font-bold transition-colors">
+        <Button variant="ghost" asChild className="text-slate-500 hover:text-primary font-bold transition-colors">
           <Link href="/" className="gap-2 text-xs font-semibold uppercase tracking-wider">
             <ArrowLeft className="h-4 w-4" /> Public Portal
           </Link>
