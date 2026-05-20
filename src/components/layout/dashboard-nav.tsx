@@ -93,22 +93,22 @@ export function DashboardNav() {
 
   return (
     <>
-      <SidebarHeader className="border-b px-4 py-6">
+      <SidebarHeader className="border-b px-4 py-6 bg-slate-50/50">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-slate-800">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-slate-800 shadow-sm border border-primary/20">
             <Stethoscope className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-lg font-bold leading-none text-slate-800">MedTrack</h1>
-            <p className="text-[10px] text-muted-foreground mt-1 font-bold uppercase tracking-wider flex items-center gap-1">
-              <ShieldCheck className="h-3 w-3 text-primary" /> Admin Portal
+            <h1 className="text-lg font-black leading-none text-slate-800 tracking-tight">MedTrack</h1>
+            <p className="text-[9px] text-slate-500 mt-1 font-bold uppercase tracking-[0.15em] flex items-center gap-1">
+              <ShieldCheck className="h-2.5 w-2.5 text-primary" /> Authorized
             </p>
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="bg-white">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-3 font-bold text-slate-400">Core System</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-3 font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mt-4 mb-2">Core System</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (
@@ -117,11 +117,11 @@ export function DashboardNav() {
                     asChild 
                     isActive={pathname === item.url}
                     tooltip={item.title}
-                    className="hover:bg-primary/10 data-[active=true]:bg-primary/10 data-[active=true]:text-slate-800"
+                    className="hover:bg-primary/5 data-[active=true]:bg-primary/10 data-[active=true]:text-slate-900 transition-all"
                   >
                     <Link href={item.url} className="flex items-center gap-3">
                       <item.icon className={cn("h-4 w-4", pathname === item.url ? "text-primary" : "text-slate-400")} />
-                      <span className="font-medium">{item.title}</span>
+                      <span className="font-bold text-xs uppercase tracking-wider">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -131,7 +131,7 @@ export function DashboardNav() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="px-3 font-bold text-slate-400">Management</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-3 font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mt-6 mb-2">Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {filteredManagementItems.map((item) => (
@@ -140,11 +140,11 @@ export function DashboardNav() {
                     asChild 
                     isActive={pathname === item.url}
                     tooltip={item.title}
-                    className="hover:bg-primary/10 data-[active=true]:bg-primary/10 data-[active=true]:text-slate-800"
+                    className="hover:bg-primary/5 data-[active=true]:bg-primary/10 data-[active=true]:text-slate-900 transition-all"
                   >
                     <Link href={item.url} className="flex items-center gap-3">
                       <item.icon className={cn("h-4 w-4", pathname === item.url ? "text-primary" : "text-slate-400")} />
-                      <span className="font-medium">{item.title}</span>
+                      <span className="font-bold text-xs uppercase tracking-wider">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -153,14 +153,14 @@ export function DashboardNav() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t p-4 space-y-2">
-        <div className="px-2 py-1.5 flex items-center gap-2 text-[10px] font-bold uppercase text-muted-foreground/60 tracking-tight">
-          <UserCircle className="h-3 w-3" />
+      <SidebarFooter className="border-t p-4 space-y-2 bg-slate-50/30">
+        <div className="px-2 py-1.5 flex items-center gap-2 text-[9px] font-black uppercase text-slate-500 tracking-[0.1em] bg-white rounded-md border border-slate-100">
+          <UserCircle className="h-3 w-3 text-primary" />
           <span className="truncate">{userRole || "Session Active"}</span>
         </div>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="text-muted-foreground hover:text-primary mb-1">
+            <SidebarMenuButton asChild className="text-slate-600 hover:text-primary mb-1 font-bold text-xs">
               <Link href="/">
                 <Home className="h-4 w-4" />
                 <span>Exit to Portal</span>
@@ -170,7 +170,7 @@ export function DashboardNav() {
           <SidebarMenuItem>
             <SidebarMenuButton 
               onClick={handleLogout}
-              className="text-destructive hover:text-destructive hover:bg-destructive/5 font-semibold"
+              className="text-destructive hover:text-destructive hover:bg-destructive/5 font-black text-xs uppercase tracking-widest"
             >
               <LogOut className="h-4 w-4" />
               <span>Sign Out</span>

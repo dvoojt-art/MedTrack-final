@@ -28,49 +28,47 @@ export function ReceiptView({ record, onClose }: ReceiptViewProps) {
   const [receiptNumber, setReceiptNumber] = useState<string | null>(null);
 
   useEffect(() => {
-    // Generate receipt number on the client to prevent hydration mismatch
+    // Prevent hydration mismatch by generating client-side
     const num = Math.floor(100000 + Math.random() * 900000).toString();
     setReceiptNumber(num);
   }, []);
 
   return (
-    <Card className="max-w-md mx-auto shadow-2xl border-primary/20">
+    <Card className="max-w-md mx-auto shadow-2xl border-primary/20 bg-white">
       <CardHeader className="text-center pb-2">
         <div className="flex justify-center mb-4">
-          <div className="h-16 w-16 bg-accent/10 rounded-full flex items-center justify-center">
-            <CheckCircle2 className="h-10 w-10 text-accent" />
+          <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center">
+            <CheckCircle2 className="h-10 w-10 text-primary" />
           </div>
         </div>
         <CardTitle className="text-2xl font-bold font-headline text-accent">Issuance Confirmed</CardTitle>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
           Digital Receipt #{receiptNumber || "------"}
         </p>
       </CardHeader>
       <CardContent className="space-y-4 font-body">
-        <div className="bg-slate-50 p-3 rounded-md grid grid-cols-2 gap-y-2 text-sm border border-slate-100">
-          <span className="text-muted-foreground">Date:</span>
-          <span className="font-medium text-right text-slate-700">{record.date}</span>
-          <span className="text-muted-foreground">Time:</span>
-          <span className="font-medium text-right text-slate-700">{record.time}</span>
-          <span className="text-muted-foreground">Patient:</span>
-          <span className="font-medium text-right text-slate-700">{record.name}</span>
-          <span className="text-muted-foreground">Dept:</span>
-          <span className="font-medium text-right text-slate-700">{record.department}</span>
-          <span className="text-muted-foreground">Email:</span>
-          <span className="font-medium text-right text-xs truncate ml-2 text-slate-500" title={record.email}>{record.email}</span>
+        <div className="bg-slate-50 p-4 rounded-lg grid grid-cols-2 gap-y-3 text-sm border border-slate-100">
+          <span className="text-slate-500 font-bold uppercase text-[10px]">Date:</span>
+          <span className="font-bold text-right text-slate-700">{record.date}</span>
+          <span className="text-slate-500 font-bold uppercase text-[10px]">Time:</span>
+          <span className="font-bold text-right text-slate-700">{record.time}</span>
+          <span className="text-slate-500 font-bold uppercase text-[10px]">Patient:</span>
+          <span className="font-bold text-right text-slate-700">{record.name}</span>
+          <span className="text-slate-500 font-bold uppercase text-[10px]">Dept:</span>
+          <span className="font-bold text-right text-slate-700">{record.department}</span>
         </div>
         
-        <div className="space-y-2">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Medicine Details</h4>
+        <div className="space-y-3">
+          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Distribution Details</h4>
           <div className="space-y-2">
             {record.medicineTaken.map((med, idx) => (
-              <div key={idx} className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
+              <div key={idx} className="flex justify-between items-center p-3 rounded-md bg-white border border-slate-100 shadow-sm">
                 <div>
-                  <p className="font-bold text-accent">{med.name}</p>
-                  <p className="text-xs text-muted-foreground">Dosage: {med.dosage}</p>
+                  <p className="font-bold text-slate-800 text-sm">{med.name}</p>
+                  <p className="text-[10px] font-bold text-primary uppercase">{med.dosage}</p>
                 </div>
-                <div className="text-right">
-                  <p className="font-medium text-slate-700">Qty: {med.quantity}</p>
+                <div className="bg-slate-50 px-2 py-1 rounded text-xs font-black text-slate-700">
+                  QTY: {med.quantity}
                 </div>
               </div>
             ))}
@@ -78,24 +76,23 @@ export function ReceiptView({ record, onClose }: ReceiptViewProps) {
         </div>
 
         <div className="pt-2 text-sm">
-          <p className="text-slate-400 text-xs uppercase font-bold mb-1">Chief Complaints</p>
-          <p className="italic bg-slate-50 p-2 rounded-sm border-l-2 border-primary text-xs text-slate-600">"{record.chiefComplaints}"</p>
+          <p className="text-slate-400 text-[10px] uppercase font-black tracking-widest mb-1">Chief Complaints</p>
+          <p className="italic bg-slate-50 p-3 rounded-lg border-l-4 border-primary text-xs text-slate-600 font-medium">
+            "{record.chiefComplaints}"
+          </p>
         </div>
       </CardContent>
-      <Separator />
-      <CardFooter className="flex justify-between pt-6">
-        <Button variant="outline" size="sm" onClick={() => typeof window !== 'undefined' && window.print()} className="gap-2 border-slate-200 text-slate-600">
+      <Separator className="bg-slate-100" />
+      <CardFooter className="flex justify-between gap-2 pt-6">
+        <Button variant="outline" size="sm" onClick={() => typeof window !== 'undefined' && window.print()} className="flex-1 gap-2 border-slate-200 text-slate-600 font-bold">
           <Printer className="h-4 w-4" /> Print
-        </Button>
-        <Button variant="outline" size="sm" className="gap-2 border-slate-200 text-slate-600">
-          <Share2 className="h-4 w-4" /> Share
         </Button>
         <Button 
           size="sm" 
           onClick={onClose} 
-          className="bg-accent hover:bg-accent/90 text-primary font-black uppercase tracking-widest shadow-md px-8"
+          className="flex-1 bg-accent hover:bg-accent/90 text-primary font-black uppercase tracking-widest shadow-lg shadow-accent/20"
         >
-          DONE
+          Done
         </Button>
       </CardFooter>
     </Card>

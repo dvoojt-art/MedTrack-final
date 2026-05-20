@@ -19,7 +19,7 @@ export default function WelcomePage() {
             MED<span className="text-primary">TRACK</span>
           </h1>
           <p className="text-slate-500 text-lg md:text-xl max-w-xl mx-auto leading-relaxed font-medium">
-            Professional medicine distribution tracking and clinic resource management for modern healthcare facilities.
+            Callbôx Davao
           </p>
         </div>
 

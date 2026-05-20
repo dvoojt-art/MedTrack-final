@@ -43,10 +43,7 @@ export default function RecordsPage() {
   const exportData = () => {
     if (!records || records.length === 0) return;
     
-    // Header row
     const headers = ["Date", "Time", "Patient Name", "Email", "Age", "Gender", "Department", "Chief Complaints", "Medicines Issued"];
-    
-    // Map records to CSV rows, ensuring fields with commas are quoted
     const rows = records.map(r => [
       r.date,
       r.time,
@@ -60,18 +57,13 @@ export default function RecordsPage() {
     ]);
 
     const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
-    
-    // Add UTF-8 BOM for Excel compatibility
     const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    
     const link = document.createElement("a");
     link.setAttribute("href", url);
     link.setAttribute("download", `medtrack_records_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
-    
-    // Cleanup
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
@@ -81,10 +73,10 @@ export default function RecordsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline tracking-tight text-accent">Medicine Issuance Logs</h1>
-          <p className="text-muted-foreground mt-1">Real-time distribution records captured from the portal.</p>
+          <p className="text-muted-foreground mt-1 text-slate-500 font-medium">Real-time distribution records captured from the portal.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={exportData} disabled={loading || !records?.length} className="gap-2">
+          <Button variant="outline" size="sm" onClick={exportData} disabled={loading || !records?.length} className="gap-2 border-slate-200">
             <Download className="h-4 w-4" /> Export CSV
           </Button>
         </div>
@@ -97,12 +89,12 @@ export default function RecordsPage() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by patient, email, medicine or symptoms..."
-                className="pl-8 h-10"
+                className="pl-8 h-10 border-slate-200"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" className="gap-2 h-10">
+            <Button variant="outline" className="gap-2 h-10 border-slate-200">
               <Filter className="h-4 w-4" /> Filter
             </Button>
           </div>
@@ -110,23 +102,23 @@ export default function RecordsPage() {
         <CardContent className="p-0">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-              <Loader2 className="h-8 w-8 animate-spin mb-2" />
-              <p>Fetching records from Firestore...</p>
+              <Loader2 className="h-8 w-8 animate-spin mb-2 text-primary" />
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Fetching records...</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-slate-50">
                   <TableRow>
-                    <TableHead className="w-[100px] font-bold text-slate-800">Date</TableHead>
-                    <TableHead className="w-[80px] font-bold text-slate-800">Time</TableHead>
-                    <TableHead className="font-bold text-slate-800">Patient Name</TableHead>
-                    <TableHead className="font-bold text-slate-800">Email</TableHead>
-                    <TableHead className="w-[60px] font-bold text-slate-800 text-center">Age</TableHead>
-                    <TableHead className="w-[80px] font-bold text-slate-800">Gender</TableHead>
-                    <TableHead className="font-bold text-slate-800">Department</TableHead>
-                    <TableHead className="font-bold text-slate-800">Chief Complaints</TableHead>
-                    <TableHead className="font-bold text-slate-800">Medicines Issued</TableHead>
+                    <TableHead className="w-[100px] font-bold text-slate-600 uppercase text-[10px] tracking-wider">Date</TableHead>
+                    <TableHead className="w-[80px] font-bold text-slate-600 uppercase text-[10px] tracking-wider">Time</TableHead>
+                    <TableHead className="font-bold text-slate-800 uppercase text-[10px] tracking-wider">Patient Name</TableHead>
+                    <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Email</TableHead>
+                    <TableHead className="w-[60px] font-bold text-slate-600 uppercase text-[10px] tracking-wider text-center">Age</TableHead>
+                    <TableHead className="w-[80px] font-bold text-slate-600 uppercase text-[10px] tracking-wider">Gender</TableHead>
+                    <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Department</TableHead>
+                    <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Chief Complaints</TableHead>
+                    <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Medicines</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -134,28 +126,28 @@ export default function RecordsPage() {
                     filteredRecords.map((record, index) => (
                       <TableRow 
                         key={record.id || index} 
-                        className="hover:bg-primary/5 transition-colors cursor-default"
+                        className="hover:bg-primary/5 transition-colors cursor-default border-slate-100"
                       >
-                        <TableCell className="font-medium whitespace-nowrap text-slate-500">{record.date}</TableCell>
-                        <TableCell className="text-muted-foreground whitespace-nowrap">{record.time}</TableCell>
-                        <TableCell className="font-bold text-accent">{record.name}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{record.email}</TableCell>
-                        <TableCell className="text-center">{record.age}</TableCell>
-                        <TableCell className="text-slate-500">{record.gender}</TableCell>
+                        <TableCell className="font-medium whitespace-nowrap text-slate-500 text-xs">{record.date}</TableCell>
+                        <TableCell className="text-slate-400 whitespace-nowrap text-xs">{record.time}</TableCell>
+                        <TableCell className="font-bold text-slate-700">{record.name}</TableCell>
+                        <TableCell className="text-xs text-slate-500 font-medium">{record.email}</TableCell>
+                        <TableCell className="text-center text-slate-600">{record.age}</TableCell>
+                        <TableCell className="text-slate-500 text-xs">{record.gender}</TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className="font-normal bg-slate-100">
+                          <Badge variant="secondary" className="font-bold text-[10px] uppercase bg-slate-100 text-slate-600 border-none">
                             {record.department}
                           </Badge>
                         </TableCell>
                         <TableCell className="max-w-[200px]">
-                          <p className="text-xs text-muted-foreground line-clamp-2" title={record.chiefComplaints}>
+                          <p className="text-xs text-slate-500 line-clamp-2 italic" title={record.chiefComplaints}>
                             {record.chiefComplaints}
                           </p>
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {record.medicineTaken?.map((m: any, i: number) => (
-                              <span key={i} className="inline-flex items-center rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 border border-slate-200">
+                              <span key={i} className="inline-flex items-center rounded-sm bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-slate-700 border border-primary/20">
                                 {m.name} ({m.quantity})
                               </span>
                             ))}
@@ -165,7 +157,7 @@ export default function RecordsPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={9} className="h-48 text-center text-muted-foreground">
+                      <TableCell colSpan={9} className="h-48 text-center text-slate-400 font-medium italic">
                         {searchTerm ? "No records found matching your search." : "No issuance records logged yet."}
                       </TableCell>
                     </TableRow>
