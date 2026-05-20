@@ -4,8 +4,9 @@
 import { SidebarProvider, Sidebar, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardNav } from "@/components/layout/dashboard-nav";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DashboardLayout({
   children,
@@ -14,16 +15,32 @@ export default function DashboardLayout({
 }) {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Check for demo authentication
     const isAuth = localStorage.getItem("medtrack_admin_auth") === "true";
+    const userRole = localStorage.getItem("medtrack_auth_role");
+
     if (!isAuth) {
       router.push("/login");
-    } else {
-      setIsAuthorized(true);
+      return;
     }
-  }, [router]);
+
+    // Protect User Management route
+    if (pathname === "/dashboard/users" && userRole !== "Super Admin") {
+      toast({
+        title: "Access Denied",
+        description: "You do not have the required permissions to access User Management.",
+        variant: "destructive",
+      });
+      router.push("/dashboard");
+      return;
+    }
+
+    setIsAuthorized(true);
+  }, [router, pathname, toast]);
 
   if (!isAuthorized) {
     return (

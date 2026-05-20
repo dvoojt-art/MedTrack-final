@@ -29,6 +29,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect, useState } from "react";
 
 const navItems = [
   {
@@ -53,6 +54,7 @@ const managementItems = [
     title: "User Management",
     url: "/dashboard/users",
     icon: Users,
+    requireSuperAdmin: true,
   },
   {
     title: "Manual Issuance",
@@ -65,6 +67,12 @@ export function DashboardNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const role = localStorage.getItem("medtrack_auth_role");
+    setUserRole(role);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("medtrack_admin_auth");
@@ -75,6 +83,13 @@ export function DashboardNav() {
     });
     router.push("/login");
   };
+
+  const filteredManagementItems = managementItems.filter(item => {
+    if (item.requireSuperAdmin) {
+      return userRole === "Super Admin";
+    }
+    return true;
+  });
 
   return (
     <>
@@ -119,7 +134,7 @@ export function DashboardNav() {
           <SidebarGroupLabel className="px-3 font-bold text-slate-400">Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {managementItems.map((item) => (
+              {filteredManagementItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild 
@@ -141,7 +156,7 @@ export function DashboardNav() {
       <SidebarFooter className="border-t p-4 space-y-2">
         <div className="px-2 py-1.5 flex items-center gap-2 text-[10px] font-bold uppercase text-muted-foreground/60 tracking-tight">
           <UserCircle className="h-3 w-3" />
-          <span className="truncate">Session Active</span>
+          <span className="truncate">{userRole || "Session Active"}</span>
         </div>
         <SidebarMenu>
           <SidebarMenuItem>

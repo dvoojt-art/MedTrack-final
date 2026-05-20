@@ -118,15 +118,15 @@ export default function RecordsPage() {
               <Table>
                 <TableHeader className="bg-slate-50">
                   <TableRow>
-                    <TableHead className="w-[100px] font-bold text-accent">Date</TableHead>
-                    <TableHead className="w-[80px] font-bold text-accent">Time</TableHead>
-                    <TableHead className="font-bold text-accent">Patient Name</TableHead>
-                    <TableHead className="font-bold text-accent">Email</TableHead>
-                    <TableHead className="w-[60px] font-bold text-accent text-center">Age</TableHead>
-                    <TableHead className="w-[80px] font-bold text-accent">Gender</TableHead>
-                    <TableHead className="font-bold text-accent">Department</TableHead>
-                    <TableHead className="font-bold text-accent">Chief Complaints</TableHead>
-                    <TableHead className="font-bold text-accent">Medicines Issued</TableHead>
+                    <TableHead className="w-[100px] font-bold text-slate-600">Date</TableHead>
+                    <TableHead className="w-[80px] font-bold text-slate-600">Time</TableHead>
+                    <TableHead className="font-bold text-slate-600">Patient Name</TableHead>
+                    <TableHead className="font-bold text-slate-600">Email</TableHead>
+                    <TableHead className="w-[60px] font-bold text-slate-600 text-center">Age</TableHead>
+                    <TableHead className="w-[80px] font-bold text-slate-600">Gender</TableHead>
+                    <TableHead className="font-bold text-slate-600">Department</TableHead>
+                    <TableHead className="font-bold text-slate-600">Chief Complaints</TableHead>
+                    <TableHead className="font-bold text-slate-600">Medicines Issued</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -136,12 +136,12 @@ export default function RecordsPage() {
                         key={record.id || index} 
                         className="hover:bg-primary/5 transition-colors cursor-default"
                       >
-                        <TableCell className="font-medium whitespace-nowrap">{record.date}</TableCell>
+                        <TableCell className="font-medium whitespace-nowrap text-slate-500">{record.date}</TableCell>
                         <TableCell className="text-muted-foreground whitespace-nowrap">{record.time}</TableCell>
                         <TableCell className="font-semibold text-accent">{record.name}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{record.email}</TableCell>
                         <TableCell className="text-center">{record.age}</TableCell>
-                        <TableCell>{record.gender}</TableCell>
+                        <TableCell className="text-slate-500">{record.gender}</TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="font-normal bg-slate-100">
                             {record.department}
@@ -155,7 +155,7 @@ export default function RecordsPage() {
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {record.medicineTaken?.map((m: any, i: number) => (
-                              <span key={i} className="inline-flex items-center rounded bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 border border-blue-100">
+                              <span key={i} className="inline-flex items-center rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 border border-slate-200">
                                 {m.name} ({m.quantity})
                               </span>
                             ))}
