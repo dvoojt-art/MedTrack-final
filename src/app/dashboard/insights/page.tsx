@@ -1,33 +1,63 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Lightbulb, RefreshCw, AlertTriangle, CheckCircle, ArrowRight } from "lucide-react";
+import { Lightbulb, RefreshCw, AlertTriangle, CheckCircle, ArrowRight, ClipboardList } from "lucide-react";
 import { getRestockRecommendations, type RestockRecommendationOutput } from "@/ai/flows/automated-inventory-insight-flow";
-import { INITIAL_RECORDS } from "@/lib/mock-data";
 import { useToast } from "@/hooks/use-toast";
+import { useFirestore, useCollection } from "@/firebase";
+import { collection } from "firebase/firestore";
 
 export default function InsightsPage() {
   const [loading, setLoading] = useState(false);
   const [insights, setInsights] = useState<RestockRecommendationOutput | null>(null);
   const { toast } = useToast();
+  const db = useFirestore();
+
+  const issuancesQuery = useMemo(() => {
+    if (!db) return null;
+    return collection(db, "issuances");
+  }, [db]);
+
+  const { data: records, loading: recordsLoading } = useCollection(issuancesQuery);
 
   const generateInsights = async () => {
+    if (!records || records.length === 0) {
+      toast({
+        title: "Insufficient Data",
+        description: "There are no medicine issuance records available to analyze yet.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      const result = await getRestockRecommendations({ records: INITIAL_RECORDS });
+      // Map Firestore data to the expected format for the AI flow
+      const formattedRecords = records.map(r => ({
+        date: r.date,
+        time: r.time,
+        name: r.name,
+        age: r.age,
+        gender: r.gender,
+        department: r.department,
+        chiefComplaints: r.chiefComplaints,
+        medicineTaken: r.medicineTaken || [],
+      }));
+
+      const result = await getRestockRecommendations({ records: formattedRecords });
       setInsights(result);
       toast({
         title: "Analysis Complete",
-        description: "AI tool has finished analyzing chief complaints trends.",
+        description: "AI tool has finished analyzing your clinical data trends.",
       });
     } catch (error) {
       toast({
         title: "Analysis Failed",
-        description: "Could not generate insights at this time.",
+        description: "Could not generate insights at this time. Please try again later.",
         variant: "destructive",
       });
     } finally {
@@ -44,7 +74,7 @@ export default function InsightsPage() {
         </div>
         <Button 
           onClick={generateInsights} 
-          disabled={loading}
+          disabled={loading || recordsLoading}
           className="gap-2 bg-primary"
         >
           {loading ? (
@@ -52,7 +82,7 @@ export default function InsightsPage() {
           ) : (
             <Lightbulb className="h-4 w-4" />
           )}
-          {loading ? "Analyzing Trends..." : "Generate AI Insights"}
+          {loading ? "Analyzing Live Data..." : "Generate AI Insights"}
         </Button>
       </div>
 
@@ -64,10 +94,10 @@ export default function InsightsPage() {
             </div>
             <h3 className="text-xl font-bold font-headline">Ready for Analysis</h3>
             <p className="text-muted-foreground max-w-sm mt-2">
-              Our AI tool will analyze patient symptoms and medicine usage to predict upcoming inventory needs.
+              Our AI tool will analyze live patient symptoms and medicine usage from your database to predict inventory needs.
             </p>
-            <Button variant="outline" onClick={generateInsights} className="mt-6">
-              Start Analysis Now
+            <Button variant="outline" onClick={generateInsights} className="mt-6" disabled={recordsLoading}>
+              {recordsLoading ? "Loading Records..." : "Start Analysis Now"}
             </Button>
           </CardContent>
         </Card>
@@ -83,7 +113,7 @@ export default function InsightsPage() {
 
       {insights && !loading && (
         <div className="space-y-6">
-          <Card className="border-none shadow-md bg-primary text-primary-foreground overflow-hidden">
+          <Card className="border-none shadow-md bg-accent text-primary overflow-hidden">
             <CardHeader className="relative z-10">
               <CardTitle className="font-headline flex items-center gap-2">
                 <CheckCircle className="h-5 w-5" /> Executive Summary
@@ -99,7 +129,7 @@ export default function InsightsPage() {
             </div>
           </Card>
 
-          <h2 className="text-xl font-bold font-headline text-primary mt-8">Priority Restock List</h2>
+          <h2 className="text-xl font-bold font-headline text-accent mt-8">Priority Restock List</h2>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {insights.recommendations.map((rec, idx) => (
               <Card key={idx} className="border-none shadow-sm hover:shadow-md transition-shadow group flex flex-col">
@@ -110,13 +140,13 @@ export default function InsightsPage() {
                       className={
                         rec.priority === "High" ? "border-destructive text-destructive" :
                         rec.priority === "Medium" ? "border-amber-500 text-amber-500" :
-                        "border-accent text-accent"
+                        "border-primary text-primary"
                       }
                     >
                       {rec.priority} Priority
                     </Badge>
                   </div>
-                  <CardTitle className="text-xl text-primary font-headline">{rec.medicineName}</CardTitle>
+                  <CardTitle className="text-xl text-accent font-headline">{rec.medicineName}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow">
                   <p className="text-sm text-muted-foreground">
@@ -125,12 +155,12 @@ export default function InsightsPage() {
                   {rec.suggestedQuantity && (
                     <div className="mt-4 p-2 bg-slate-50 rounded flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Suggested Restock:</span>
-                      <span className="font-bold text-primary">{rec.suggestedQuantity} units</span>
+                      <span className="font-bold text-accent">{rec.suggestedQuantity} units</span>
                     </div>
                   )}
                 </CardContent>
                 <CardFooter className="pt-0">
-                  <Button variant="link" className="p-0 text-accent hover:text-accent/80 group-hover:translate-x-1 transition-transform">
+                  <Button variant="link" className="p-0 text-primary hover:text-primary/80 group-hover:translate-x-1 transition-transform">
                     Create Purchase Order <ArrowRight className="ml-1 h-4 w-4" />
                   </Button>
                 </CardFooter>

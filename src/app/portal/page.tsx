@@ -154,7 +154,7 @@ export default function PublicPortalPage() {
       {isSuccess && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white p-8 rounded-full shadow-2xl border border-slate-200 animate-in zoom-in-50 duration-500">
-            <CheckCircle2 className="h-20 w-20 text-slate-500 animate-bounce" />
+            <CheckCircle2 className="h-20 w-20 text-accent animate-bounce" />
           </div>
           <p className="mt-4 text-xl font-bold text-slate-800">Record Logged!</p>
         </div>
@@ -162,12 +162,12 @@ export default function PublicPortalPage() {
 
       <header className="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 bg-slate-700 rounded-lg flex items-center justify-center text-primary">
+          <div className="h-8 w-8 bg-accent rounded-lg flex items-center justify-center text-primary">
             <Stethoscope className="h-5 w-5" />
           </div>
           <h1 className="text-xl font-bold text-slate-700 font-headline">Clinic Entry Portal</h1>
         </div>
-        <Button variant="ghost" size="sm" asChild className="text-slate-600 hover:text-primary font-bold">
+        <Button variant="ghost" size="sm" asChild className="text-accent hover:text-primary font-bold">
           <Link href="/" className="gap-2">
             <Home className="h-4 w-4" /> Exit to Home
           </Link>
@@ -334,7 +334,7 @@ export default function PublicPortalPage() {
           </div>
 
           <div className="flex justify-end pt-4">
-            <Button type="submit" size="lg" className="bg-slate-700 hover:bg-slate-800 text-primary gap-2 min-w-[240px] shadow-lg shadow-slate-200" disabled={isSubmitting || isSuccess}>
+            <Button type="submit" size="lg" className="bg-accent hover:bg-accent/90 text-primary gap-2 min-w-[240px] shadow-lg shadow-slate-200" disabled={isSubmitting || isSuccess}>
               <Send className="h-4 w-4" /> {isSubmitting ? "Recording..." : "Record & Print Receipt"}
             </Button>
           </div>

@@ -178,7 +178,6 @@ export default function LoginPage() {
     router.push("/dashboard");
   };
 
-  // Prevent hydration flicker by returning a consistent loader until mounted
   if (!isMounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white p-4">
@@ -193,7 +192,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-4">
       <div className="absolute top-6 left-6">
-        <Button variant="ghost" asChild className="text-slate-600 hover:text-primary font-bold transition-colors">
+        <Button variant="ghost" asChild className="text-accent hover:text-primary font-bold transition-colors">
           <Link href="/" className="gap-2 text-xs font-semibold uppercase tracking-wider">
             <ArrowLeft className="h-4 w-4" /> Public Portal
           </Link>
