@@ -161,21 +161,21 @@ export default function PublicPortalPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {isSuccess && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white p-8 rounded-full shadow-2xl border border-accent/20 animate-in zoom-in-50 duration-500">
-            <CheckCircle2 className="h-20 w-20 text-accent animate-bounce" />
+          <div className="bg-white p-8 rounded-full shadow-2xl border border-slate-200 animate-in zoom-in-50 duration-500">
+            <CheckCircle2 className="h-20 w-20 text-slate-500 animate-bounce" />
           </div>
-          <p className="mt-4 text-xl font-bold text-primary">Record Logged!</p>
+          <p className="mt-4 text-xl font-bold text-slate-800">Record Logged!</p>
         </div>
       )}
 
       <header className="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-white">
+          <div className="h-8 w-8 bg-slate-700 rounded-lg flex items-center justify-center text-primary">
             <Stethoscope className="h-5 w-5" />
           </div>
-          <h1 className="text-xl font-bold text-primary font-headline">Clinic Entry Portal</h1>
+          <h1 className="text-xl font-bold text-slate-700 font-headline">Clinic Entry Portal</h1>
         </div>
-        <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary">
+        <Button variant="ghost" size="sm" asChild className="text-slate-400 hover:text-primary">
           <Link href="/" className="gap-2">
             <Home className="h-4 w-4" /> Exit to Home
           </Link>
@@ -184,20 +184,20 @@ export default function PublicPortalPage() {
 
       <main className="max-w-4xl mx-auto p-6 md:p-10 w-full flex-1">
         <div className="mb-8 animate-in fade-in slide-in-from-left-4 duration-500">
-          <h2 className="text-3xl font-bold font-headline tracking-tight text-primary">New Medicine Distribution</h2>
-          <p className="text-muted-foreground mt-1 text-lg">Enter employee and medicine details for the record.</p>
+          <h2 className="text-3xl font-bold font-headline tracking-tight text-slate-800">New Medicine Distribution</h2>
+          <p className="text-slate-500 mt-1 text-lg">Enter employee and medicine details for the record.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
           <div className="grid grid-cols-1 gap-6">
-            <Card className="border-none shadow-sm overflow-hidden">
-              <CardHeader className="bg-white border-b">
-                <CardTitle className="text-lg font-headline text-primary">Personal Details</CardTitle>
+            <Card className="border-none shadow-sm overflow-hidden bg-white">
+              <CardHeader className="bg-slate-50 border-b">
+                <CardTitle className="text-lg font-headline text-slate-700">Personal Details</CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name" className="text-slate-600">Full Name</Label>
                     <Input 
                       id="name" 
                       placeholder="e.g. Juan Dela Cruz" 
@@ -207,7 +207,7 @@ export default function PublicPortalPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Work Email</Label>
+                    <Label htmlFor="email" className="text-slate-600">Work Email</Label>
                     <Input 
                       id="email" 
                       type="email"
@@ -220,7 +220,7 @@ export default function PublicPortalPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="age">Age</Label>
+                    <Label htmlFor="age" className="text-slate-600">Age</Label>
                     <Input 
                       id="age" 
                       type="number" 
@@ -231,7 +231,7 @@ export default function PublicPortalPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="gender">Gender</Label>
+                    <Label htmlFor="gender" className="text-slate-600">Gender</Label>
                     <Select value={formData.gender} onValueChange={(val) => setFormData({...formData, gender: val})}>
                       <SelectTrigger>
                         <SelectValue placeholder="Gender" />
@@ -247,14 +247,14 @@ export default function PublicPortalPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-none shadow-sm overflow-hidden">
-              <CardHeader className="bg-white border-b">
-                <CardTitle className="text-lg font-headline text-primary">Employment Information</CardTitle>
+            <Card className="border-none shadow-sm overflow-hidden bg-white">
+              <CardHeader className="bg-slate-50 border-b">
+                <CardTitle className="text-lg font-headline text-slate-700">Employment Information</CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
+                    <Label htmlFor="department" className="text-slate-600">Department</Label>
                     <Select value={formData.department} onValueChange={(val) => setFormData({...formData, department: val})}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select Department" />
@@ -267,7 +267,7 @@ export default function PublicPortalPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="position">Position</Label>
+                    <Label htmlFor="position" className="text-slate-600">Position</Label>
                     <Select 
                       value={formData.position} 
                       onValueChange={(val) => setFormData({...formData, position: val})}
@@ -285,11 +285,11 @@ export default function PublicPortalPage() {
                   </div>
                 </div>
                 <div className="pt-2">
-                  <Label htmlFor="complaints">Chief Complaints / Symptoms</Label>
+                  <Label htmlFor="complaints" className="text-slate-600">Chief Complaints / Symptoms</Label>
                   <Textarea 
                     id="complaints" 
                     placeholder="Briefly describe what the employee is feeling..." 
-                    className="min-h-[100px] mt-2"
+                    className="min-h-[100px] mt-2 border-slate-200"
                     value={formData.chiefComplaints}
                     onChange={(e) => setFormData({...formData, chiefComplaints: e.target.value})}
                     required
@@ -298,10 +298,10 @@ export default function PublicPortalPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-none shadow-sm overflow-hidden">
-              <CardHeader className="bg-white border-b flex flex-row items-center justify-between">
-                <CardTitle className="text-lg font-headline text-primary">Medicine Issued</CardTitle>
-                <Button type="button" variant="outline" size="sm" onClick={addMedicine} className="gap-2">
+            <Card className="border-none shadow-sm overflow-hidden bg-white">
+              <CardHeader className="bg-slate-50 border-b flex flex-row items-center justify-between">
+                <CardTitle className="text-lg font-headline text-slate-700">Medicine Issued</CardTitle>
+                <Button type="button" variant="outline" size="sm" onClick={addMedicine} className="gap-2 border-slate-200">
                   <Plus className="h-4 w-4" /> Add Item
                 </Button>
               </CardHeader>
@@ -309,39 +309,42 @@ export default function PublicPortalPage() {
                 {medicines.map((med, index) => (
                   <div key={index} className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-slate-50 relative border border-slate-100 animate-in fade-in duration-300">
                     <div className="sm:col-span-2 space-y-2">
-                      <Label>Medicine Name</Label>
+                      <Label className="text-slate-500">Medicine Name</Label>
                       <Input 
                         placeholder="e.g. Paracetamol" 
                         value={med.name}
                         onChange={(e) => updateMedicine(index, 'name', e.target.value)}
                         required
+                        className="bg-white"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Quantity</Label>
+                      <Label className="text-slate-500">Quantity</Label>
                       <Input 
                         type="number" 
                         value={med.quantity}
                         min={1}
                         onChange={(e) => updateMedicine(index, 'quantity', parseInt(e.target.value))}
                         required
+                        className="bg-white"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Dosage</Label>
+                      <Label className="text-slate-500">Dosage</Label>
                       <div className="flex gap-2">
                         <Input 
                           placeholder="e.g. 500mg" 
                           value={med.dosage}
                           onChange={(e) => updateMedicine(index, 'dosage', e.target.value)}
                           required
+                          className="bg-white"
                         />
                         {medicines.length > 1 && (
                           <Button 
                             type="button" 
                             variant="ghost" 
                             size="icon" 
-                            className="text-destructive shrink-0"
+                            className="text-slate-400 hover:text-destructive shrink-0"
                             onClick={() => removeMedicine(index)}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -356,7 +359,7 @@ export default function PublicPortalPage() {
           </div>
 
           <div className="flex justify-end pt-4">
-            <Button type="submit" size="lg" className="bg-primary gap-2 min-w-[240px] shadow-lg shadow-primary/20" disabled={isSubmitting || isSuccess}>
+            <Button type="submit" size="lg" className="bg-slate-700 hover:bg-slate-800 text-primary gap-2 min-w-[240px] shadow-lg shadow-slate-200" disabled={isSubmitting || isSuccess}>
               <Send className="h-4 w-4" /> {isSubmitting ? "Recording..." : "Record & Print Receipt"}
             </Button>
           </div>

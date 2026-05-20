@@ -5,51 +5,52 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    --background: 210 20% 98%;
+    --foreground: 215 25% 15%;
     
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    --card-foreground: 215 25% 15%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 215 25% 15%;
     
     /* Primary Golden Yellow #ffca09 */
     --primary: 47 100% 52%;
-    --primary-foreground: 0 0% 0%;
+    --primary-foreground: 215 25% 10%;
     
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 0%;
+    --secondary: 210 20% 95%;
+    --secondary-foreground: 215 25% 20%;
     
-    --muted: 203 15% 96%;
-    --muted-foreground: 203 15% 44%; /* Slate Gray #5F7380 */
+    --muted: 215 15% 92%;
+    --muted-foreground: 215 15% 44%;
     
-    /* Accent - Deep Charcoal/Black */
-    --accent: 0 0% 0%;
+    /* Accent - Softer Charcoal Gray instead of Black */
+    --accent: 215 25% 27%;
     --accent-foreground: 47 100% 52%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
     
-    --border: 0 0% 88%;
-    --input: 0 0% 88%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
     --ring: 47 100% 52%;
     
     --chart-1: 47 100% 52%;
-    --chart-2: 0 0% 0%;
-    --chart-3: 203 15% 44%;
+    --chart-2: 215 25% 27%;
+    --chart-3: 215 15% 44%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     
     --radius: 0.6rem;
     
-    --sidebar-background: 0 0% 0%;
+    /* Sidebar themed with Charcoal Gray */
+    --sidebar-background: 215 25% 20%;
     --sidebar-foreground: 47 100% 52%;
     --sidebar-primary: 47 100% 52%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 0 0% 10%;
+    --sidebar-primary-foreground: 215 25% 10%;
+    --sidebar-accent: 215 25% 25%;
     --sidebar-accent-foreground: 47 100% 52%;
-    --sidebar-border: 0 0% 15%;
+    --sidebar-border: 215 25% 30%;
     --sidebar-ring: 47 100% 52%;
   }
 }
