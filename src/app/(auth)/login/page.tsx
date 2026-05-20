@@ -7,12 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Lock, User, ArrowLeft, Loader2, Eye, EyeOff, UserPlus } from "lucide-react";
+import { ShieldCheck, Lock, User, ArrowLeft, Loader2, Eye, EyeOff, UserPlus, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useFirestore } from "@/firebase";
-import { collection, query, where, getDocs, limit } from "firebase/firestore";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { collection, query, getDocs, limit, addDoc, serverTimestamp, where } from "firebase/firestore";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,6 +30,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isBootstrapAvailable, setIsBootstrapAvailable] = useState(false);
+  const [showSetupModal, setShowSetupModal] = useState(false);
+
+  // Setup form state
+  const [setupData, setSetupData] = useState({
+    fullName: "",
+    email: "",
+    password: ""
+  });
 
   useEffect(() => {
     const checkAdminsExist = async () => {
@@ -32,6 +47,7 @@ export default function LoginPage() {
         const snap = await getDocs(q);
         if (snap.empty) {
           setIsBootstrapAvailable(true);
+          setShowSetupModal(true);
         }
       } catch (e) {
         // Silent fail for check
@@ -47,17 +63,6 @@ export default function LoginPage() {
 
     try {
       if (!db) throw new Error("Database not connected");
-
-      if (isBootstrapAvailable && username === "admin" && password === "password") {
-        localStorage.setItem("medtrack_auth_role", "Super Admin");
-        localStorage.setItem("medtrack_admin_auth", "true");
-        toast({
-          title: "Setup Access Granted",
-          description: "Proceeding to initialize first administrator account.",
-        });
-        router.push("/dashboard/users");
-        return;
-      }
 
       const adminsRef = collection(db, "admins");
       const emailQuery = query(adminsRef, where("email", "==", username));
@@ -93,7 +98,7 @@ export default function LoginPage() {
       } else {
         toast({
           title: "Account Not Registered",
-          description: "This account is not recognized by the system.",
+          description: "This email is not recognized by the system.",
           variant: "destructive",
         });
       }
@@ -108,28 +113,55 @@ export default function LoginPage() {
     }
   };
 
+  const handleSetupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!db) return;
+    setLoading(true);
+
+    try {
+      const adminData = {
+        fullName: setupData.fullName,
+        email: setupData.email,
+        password: setupData.password,
+        role: "Super Admin",
+        status: "Active",
+        addedAt: serverTimestamp(),
+      };
+
+      await addDoc(collection(db, "admins"), adminData);
+      
+      localStorage.setItem("medtrack_auth_role", "Super Admin");
+      localStorage.setItem("medtrack_admin_auth", "true");
+      
+      toast({
+        title: "Setup Complete",
+        description: "Your administrator account has been created successfully.",
+      });
+      
+      setShowSetupModal(false);
+      router.push("/dashboard");
+    } catch (error) {
+      toast({
+        title: "Setup Failed",
+        description: "Could not create administrator account.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="absolute top-6 left-6">
-        <Button variant="ghost" asChild className="text-slate-600 hover:text-primary font-bold">
+        <Button variant="ghost" asChild className="text-slate-600 hover:text-primary font-bold transition-colors">
           <Link href="/" className="gap-2 text-xs font-semibold uppercase tracking-wider">
             <ArrowLeft className="h-4 w-4" /> Public Portal
           </Link>
         </Button>
       </div>
       
-      <div className="w-full max-w-md space-y-4">
-        {isBootstrapAvailable && (
-          <Alert className="bg-primary border-slate-700 text-slate-800 animate-in slide-in-from-top-4 duration-500 shadow-lg">
-            <UserPlus className="h-5 w-5 text-slate-800" />
-            <AlertTitle className="font-bold">Initial Setup Required</AlertTitle>
-            <AlertDescription className="text-sm font-medium">
-              No administrators found. Log in with setup credentials: <br />
-              <strong>User:</strong> admin | <strong>Pass:</strong> password
-            </AlertDescription>
-          </Alert>
-        )}
-
+      <div className="w-full max-w-md">
         <Card className="border-none shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-500 bg-white">
           <div className="h-2 bg-primary w-full" />
           <CardHeader className="space-y-2 text-center pb-8 pt-10">
@@ -138,21 +170,21 @@ export default function LoginPage() {
                 <ShieldCheck className="h-8 w-8 text-slate-700" />
               </div>
             </div>
-            <CardTitle className="text-3xl font-bold font-headline text-slate-800 tracking-tight uppercase">Admin Portal</CardTitle>
-            <CardDescription className="text-slate-500 font-medium">Secure Clinical Management Access</CardDescription>
+            <CardTitle className="text-3xl font-bold font-headline text-slate-700 tracking-tight uppercase">Admin Portal</CardTitle>
+            <CardDescription className="text-slate-400 font-medium">Secure Clinical Management Access</CardDescription>
           </CardHeader>
           <CardContent className="px-8 pb-8 space-y-6">
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="username" className="text-xs font-bold uppercase text-slate-500">
-                  Username or Work Email
+                  Work Email Address
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
                   <Input 
                     id="username" 
                     type="text"
-                    placeholder={isBootstrapAvailable ? "admin" : "Enter your email"} 
+                    placeholder="Enter your email" 
                     className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -191,7 +223,7 @@ export default function LoginPage() {
                     Verifying...
                   </>
                 ) : (
-                  isBootstrapAvailable ? "Initialize Setup" : "Access Dashboard"
+                  "Access Dashboard"
                 )}
               </Button>
             </form>
@@ -203,6 +235,66 @@ export default function LoginPage() {
           </CardFooter>
         </Card>
       </div>
+
+      {/* Initial Setup Modal */}
+      <Dialog open={showSetupModal} onOpenChange={setShowSetupModal}>
+        <DialogContent className="sm:max-w-[425px] border-none shadow-2xl">
+          <form onSubmit={handleSetupSubmit}>
+            <DialogHeader className="space-y-3">
+              <div className="h-12 w-12 bg-primary/20 rounded-full flex items-center justify-center text-primary mb-2">
+                <ShieldAlert className="h-6 w-6" />
+              </div>
+              <DialogTitle className="text-2xl font-bold font-headline text-slate-700">Initial Setup Required</DialogTitle>
+              <DialogDescription className="text-slate-500">
+                No administrators found in the system. Please register the first <strong>Super Admin</strong> account to proceed.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-6">
+              <div className="space-y-2">
+                <Label htmlFor="setup-name" className="text-xs font-bold uppercase text-slate-500">Full Name</Label>
+                <Input 
+                  id="setup-name" 
+                  placeholder="System Manager" 
+                  className="h-11 border-slate-200"
+                  value={setupData.fullName}
+                  onChange={(e) => setSetupData({...setupData, fullName: e.target.value})}
+                  required 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="setup-email" className="text-xs font-bold uppercase text-slate-500">Work Email</Label>
+                <Input 
+                  id="setup-email" 
+                  type="email"
+                  placeholder="admin@callboxinc.com" 
+                  className="h-11 border-slate-200"
+                  value={setupData.email}
+                  onChange={(e) => setSetupData({...setupData, email: e.target.value})}
+                  required 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="setup-password" className="text-xs font-bold uppercase text-slate-500">Password</Label>
+                <Input 
+                  id="setup-password" 
+                  type="password"
+                  placeholder="Assign secure password" 
+                  className="h-11 border-slate-200"
+                  value={setupData.password}
+                  onChange={(e) => setSetupData({...setupData, password: e.target.value})}
+                  required 
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="w-full h-11 bg-slate-700 hover:bg-slate-800 text-primary font-bold shadow-md" disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />}
+                Complete Setup & Login
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
