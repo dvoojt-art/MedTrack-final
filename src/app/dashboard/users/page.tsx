@@ -134,7 +134,7 @@ export default function UserManagementPage() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline tracking-tight text-primary">User Management</h1>
+          <h1 className="text-3xl font-bold font-headline tracking-tight text-accent">User Management</h1>
           <p className="text-muted-foreground mt-1">Manage all system administrators and staff permissions.</p>
         </div>
         
@@ -226,7 +226,7 @@ export default function UserManagementPage() {
         <Card className="md:col-span-2 border-none shadow-sm overflow-hidden">
           <CardHeader className="bg-white border-b">
             <div className="flex items-center gap-2">
-              <UsersIcon className="h-5 w-5 text-primary" />
+              <UsersIcon className="h-5 w-5 text-accent" />
               <CardTitle className="text-lg">Registered Access List</CardTitle>
             </div>
             <CardDescription>Active personnel authorized to view clinical records.</CardDescription>
@@ -240,10 +240,10 @@ export default function UserManagementPage() {
               <Table>
                 <TableHeader className="bg-slate-50">
                   <TableRow>
-                    <TableHead className="font-bold">Identity</TableHead>
-                    <TableHead className="font-bold">Role</TableHead>
-                    <TableHead className="font-bold text-center">Status</TableHead>
-                    <TableHead className="font-bold text-right">Actions</TableHead>
+                    <TableHead className="font-bold text-accent">Identity</TableHead>
+                    <TableHead className="font-bold text-accent">Role</TableHead>
+                    <TableHead className="font-bold text-accent text-center">Status</TableHead>
+                    <TableHead className="font-bold text-accent text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -252,12 +252,12 @@ export default function UserManagementPage() {
                       <TableRow key={admin.id}>
                         <TableCell>
                           <div className="flex flex-col">
-                            <span className="font-medium text-primary">{admin.fullName}</span>
+                            <span className="font-medium text-accent">{admin.fullName}</span>
                             <span className="text-xs text-muted-foreground">{admin.email}</span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="font-normal border-primary/20">
+                          <Badge variant="outline" className="font-normal border-accent/20">
                             {admin.role}
                           </Badge>
                         </TableCell>
@@ -287,10 +287,10 @@ export default function UserManagementPage() {
         </Card>
 
         <div className="space-y-6">
-          <Card className="border-none shadow-sm bg-primary text-primary-foreground">
+          <Card className="border-none shadow-sm bg-accent text-accent-foreground">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <ShieldCheck className="h-5 w-5" /> 
+                <ShieldCheck className="h-5 w-5 text-primary" /> 
                 System Access
               </CardTitle>
             </CardHeader>

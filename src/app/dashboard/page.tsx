@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from "react";
@@ -56,7 +57,7 @@ export default function DashboardOverview() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline tracking-tight text-primary">System Dashboard</h1>
+          <h1 className="text-3xl font-bold font-headline tracking-tight text-accent">System Dashboard</h1>
           <p className="text-muted-foreground mt-1">Real-time clinical metrics and system overview.</p>
         </div>
         <div className="flex gap-2">
@@ -123,7 +124,7 @@ export default function DashboardOverview() {
                 recentRecords.map((record) => (
                   <div key={record.id} className="flex items-center">
                     <div className="ml-4 space-y-1">
-                      <p className="text-sm font-medium leading-none">{record.name}</p>
+                      <p className="text-sm font-medium leading-none text-accent">{record.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {record.department}
                       </p>
@@ -151,13 +152,13 @@ export default function DashboardOverview() {
         <Card className="lg:col-span-3 border-none shadow-sm bg-primary/5">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
+              <TrendingUp className="h-5 w-5 text-accent" />
               Quick Insights
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg bg-white p-4 shadow-sm border border-primary/10">
-              <h4 className="text-sm font-semibold text-primary mb-1">AI Recommendation</h4>
+              <h4 className="text-sm font-semibold text-accent mb-1">AI Recommendation</h4>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Based on current trends, consider checking Paracetamol stock levels due to an increase in reports from certain departments.
               </p>

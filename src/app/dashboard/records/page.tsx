@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -79,7 +80,7 @@ export default function RecordsPage() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline tracking-tight text-primary">Medicine Issuance Logs</h1>
+          <h1 className="text-3xl font-bold font-headline tracking-tight text-accent">Medicine Issuance Logs</h1>
           <p className="text-muted-foreground mt-1">Real-time distribution records captured from the portal.</p>
         </div>
         <div className="flex items-center gap-2">
@@ -117,15 +118,15 @@ export default function RecordsPage() {
               <Table>
                 <TableHeader className="bg-slate-50">
                   <TableRow>
-                    <TableHead className="w-[100px] font-bold text-primary">Date</TableHead>
-                    <TableHead className="w-[80px] font-bold text-primary">Time</TableHead>
-                    <TableHead className="font-bold text-primary">Patient Name</TableHead>
-                    <TableHead className="font-bold text-primary">Email</TableHead>
-                    <TableHead className="w-[60px] font-bold text-primary text-center">Age</TableHead>
-                    <TableHead className="w-[80px] font-bold text-primary">Gender</TableHead>
-                    <TableHead className="font-bold text-primary">Department</TableHead>
-                    <TableHead className="font-bold text-primary">Chief Complaints</TableHead>
-                    <TableHead className="font-bold text-primary">Medicines Issued</TableHead>
+                    <TableHead className="w-[100px] font-bold text-accent">Date</TableHead>
+                    <TableHead className="w-[80px] font-bold text-accent">Time</TableHead>
+                    <TableHead className="font-bold text-accent">Patient Name</TableHead>
+                    <TableHead className="font-bold text-accent">Email</TableHead>
+                    <TableHead className="w-[60px] font-bold text-accent text-center">Age</TableHead>
+                    <TableHead className="w-[80px] font-bold text-accent">Gender</TableHead>
+                    <TableHead className="font-bold text-accent">Department</TableHead>
+                    <TableHead className="font-bold text-accent">Chief Complaints</TableHead>
+                    <TableHead className="font-bold text-accent">Medicines Issued</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -137,7 +138,7 @@ export default function RecordsPage() {
                       >
                         <TableCell className="font-medium whitespace-nowrap">{record.date}</TableCell>
                         <TableCell className="text-muted-foreground whitespace-nowrap">{record.time}</TableCell>
-                        <TableCell className="font-semibold text-primary">{record.name}</TableCell>
+                        <TableCell className="font-semibold text-accent">{record.name}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{record.email}</TableCell>
                         <TableCell className="text-center">{record.age}</TableCell>
                         <TableCell>{record.gender}</TableCell>
