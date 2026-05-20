@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { CheckCircle2, Printer, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -23,6 +24,14 @@ interface ReceiptViewProps {
 }
 
 export function ReceiptView({ record, onClose }: ReceiptViewProps) {
+  const [receiptNumber, setReceiptNumber] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Generate receipt number on the client to prevent hydration mismatch
+    const num = Math.floor(100000 + Math.random() * 900000).toString();
+    setReceiptNumber(num);
+  }, []);
+
   return (
     <Card className="max-w-md mx-auto shadow-2xl border-primary/20">
       <CardHeader className="text-center pb-2">
@@ -32,7 +41,9 @@ export function ReceiptView({ record, onClose }: ReceiptViewProps) {
           </div>
         </div>
         <CardTitle className="text-2xl font-bold font-headline text-primary">Issuance Confirmed</CardTitle>
-        <p className="text-sm text-muted-foreground">Digital Receipt #{Math.floor(100000 + Math.random() * 900000)}</p>
+        <p className="text-sm text-muted-foreground">
+          Digital Receipt #{receiptNumber || "------"}
+        </p>
       </CardHeader>
       <CardContent className="space-y-4 font-body">
         <div className="bg-secondary/50 p-3 rounded-md grid grid-cols-2 gap-y-2 text-sm">
@@ -78,7 +89,11 @@ export function ReceiptView({ record, onClose }: ReceiptViewProps) {
         <Button variant="outline" size="sm" className="gap-2">
           <Share2 className="h-4 w-4" /> Share
         </Button>
-        <Button size="sm" onClick={onClose} className="bg-accent hover:bg-accent/90">
+        <Button 
+          size="sm" 
+          onClick={onClose} 
+          className="bg-accent hover:bg-accent/90 text-primary font-bold shadow-md"
+        >
           Done
         </Button>
       </CardFooter>
