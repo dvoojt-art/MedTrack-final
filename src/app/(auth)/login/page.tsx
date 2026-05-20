@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Lock, User, ArrowLeft, Loader2, AlertCircle, Eye, EyeOff, UserPlus } from "lucide-react";
+import { ShieldCheck, Lock, User, ArrowLeft, Loader2, Eye, EyeOff, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useFirestore } from "@/firebase";
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const [isBootstrapAvailable, setIsBootstrapAvailable] = useState(false);
 
   useEffect(() => {
+    // Automatically check if the system needs initial setup
     const checkAdminsExist = async () => {
       if (!db) return;
       try {
@@ -52,10 +54,10 @@ export default function LoginPage() {
         localStorage.setItem("medtrack_auth_role", "Super Admin");
         localStorage.setItem("medtrack_admin_auth", "true");
         toast({
-          title: "Bootstrap Access Granted",
-          description: "Initial setup authorized. Please proceed to register a real admin.",
+          title: "Setup Access Granted",
+          description: "Proceeding to initialize first administrator account.",
         });
-        router.push("/dashboard");
+        router.push("/dashboard/users"); // Go directly to user management to set up first real admin
         return;
       }
 
@@ -72,15 +74,15 @@ export default function LoginPage() {
           if (adminData.status !== "Active") {
             toast({
               title: "Access Denied",
-              description: "Your account is currently inactive. Contact Super Admin.",
+              description: "Account inactive. Please contact system manager.",
               variant: "destructive",
             });
           } else {
             localStorage.setItem("medtrack_auth_role", adminData.role);
             localStorage.setItem("medtrack_admin_auth", "true");
             toast({
-              title: "Access Granted",
-              description: `Welcome back, ${adminData.fullName}.`,
+              title: "Verification Successful",
+              description: `Welcome, ${adminData.fullName}. Accessing dashboard...`,
             });
             router.push("/dashboard");
           }
@@ -89,7 +91,7 @@ export default function LoginPage() {
         } else {
           toast({
             title: "Authentication Failed",
-            description: "The password you entered is incorrect.",
+            description: "Incorrect password. Please try again.",
             variant: "destructive",
           });
           setLoading(false);
@@ -97,19 +99,19 @@ export default function LoginPage() {
         }
       }
 
-      // 3. Not found anywhere
+      // 3. Not registered prompt
       toast({
-        title: "Account Not Found",
+        title: "Account Not Registered",
         description: isBootstrapAvailable 
-          ? "Please use 'admin' and 'password' to setup your first administrator."
-          : "This email is not registered in the system.",
+          ? "System is uninitialized. Use setup credentials provided in the alert."
+          : "This email address is not recognized by the system.",
         variant: "destructive",
       });
       
     } catch (error) {
       toast({
         title: "System Error",
-        description: "Network timeout or database connectivity issue.",
+        description: "Could not connect to authentication services.",
         variant: "destructive",
       });
     } finally {
@@ -118,23 +120,23 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="absolute top-6 left-6">
         <Button variant="ghost" asChild className="text-muted-foreground hover:text-primary">
           <Link href="/" className="gap-2 text-xs font-semibold uppercase tracking-wider">
-            <ArrowLeft className="h-4 w-4" /> Exit to Public Portal
+            <ArrowLeft className="h-4 w-4" /> Public Portal
           </Link>
         </Button>
       </div>
       
       <div className="w-full max-w-md space-y-4">
         {isBootstrapAvailable && (
-          <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-900 animate-in slide-in-from-top-4 duration-500">
-            <UserPlus className="h-5 w-5 text-amber-600" />
-            <AlertTitle className="font-bold">Initial Setup Required</AlertTitle>
-            <AlertDescription className="text-sm">
-              No administrators registered yet. Please <strong>register an admin</strong> by logging in with: <br />
-              User: <code className="bg-amber-100 px-1 rounded">admin</code> | Pass: <code className="bg-amber-100 px-1 rounded">password</code>
+          <Alert className="bg-primary/10 border-primary text-primary-foreground animate-in slide-in-from-top-4 duration-500 shadow-lg">
+            <UserPlus className="h-5 w-5 text-accent" />
+            <AlertTitle className="font-bold text-accent">Initial Setup Required</AlertTitle>
+            <AlertDescription className="text-sm text-foreground/80">
+              No administrators found. Log in with the system default to register your first admin: <br />
+              <strong>User:</strong> admin | <strong>Pass:</strong> password
             </AlertDescription>
           </Alert>
         )}
@@ -144,24 +146,24 @@ export default function LoginPage() {
           <CardHeader className="space-y-2 text-center pb-8 pt-10">
             <div className="flex justify-center mb-4">
               <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center border-4 border-white shadow-sm">
-                <ShieldCheck className="h-8 w-8 text-primary" />
+                <ShieldCheck className="h-8 w-8 text-accent" />
               </div>
             </div>
-            <CardTitle className="text-3xl font-bold font-headline text-primary tracking-tight">Admin Login</CardTitle>
-            <CardDescription>Secure Administrative Portal</CardDescription>
+            <CardTitle className="text-3xl font-bold font-headline text-accent tracking-tight">Admin Portal</CardTitle>
+            <CardDescription>Secure Clinical Management Login</CardDescription>
           </CardHeader>
           <CardContent className="px-8 pb-8 space-y-6">
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="username" className="text-xs font-bold uppercase text-muted-foreground">
-                  {isBootstrapAvailable ? "Username or Email" : "Work Email"}
+                  Username or Email
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground/50" />
                   <Input 
                     id="username" 
                     type="text"
-                    placeholder={isBootstrapAvailable ? "admin" : "admin@callboxinc.com"} 
+                    placeholder={isBootstrapAvailable ? "admin" : "email@callboxinc.com"} 
                     className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -170,7 +172,7 @@ export default function LoginPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Security Password</Label>
+                <Label htmlFor="password">Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground/50" />
                   <Input 
@@ -193,21 +195,21 @@ export default function LoginPage() {
                   </Button>
                 </div>
               </div>
-              <Button type="submit" className="w-full h-12 text-md font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all mt-4" disabled={loading}>
+              <Button type="submit" className="w-full h-12 text-md font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition-all mt-4" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Verifying...
                   </>
                 ) : (
-                  isBootstrapAvailable ? "Start Setup" : "Access Dashboard"
+                  isBootstrapAvailable ? "Initialize Setup" : "Access Dashboard"
                 )}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex flex-col items-center bg-slate-50 border-t p-6">
             <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
-              Access restricted to registered system administrators. Unauthorized entry is logged.
+              Authorized access only. All security events are monitored and logged.
             </p>
           </CardFooter>
         </Card>
