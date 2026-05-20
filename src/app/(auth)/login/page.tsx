@@ -29,7 +29,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isBootstrapAvailable, setIsBootstrapAvailable] = useState(false);
   const [showSetupModal, setShowSetupModal] = useState(false);
 
   // Setup form state
@@ -46,7 +45,6 @@ export default function LoginPage() {
         const q = query(collection(db, "admins"), limit(1));
         const snap = await getDocs(q);
         if (snap.empty) {
-          setIsBootstrapAvailable(true);
           setShowSetupModal(true);
         }
       } catch (e) {
@@ -152,7 +150,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-white p-4">
       <div className="absolute top-6 left-6">
         <Button variant="ghost" asChild className="text-slate-600 hover:text-primary font-bold transition-colors">
           <Link href="/" className="gap-2 text-xs font-semibold uppercase tracking-wider">
@@ -162,11 +160,11 @@ export default function LoginPage() {
       </div>
       
       <div className="w-full max-w-md">
-        <Card className="border-none shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-500 bg-white">
+        <Card className="border-none shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 bg-slate-50">
           <div className="h-2 bg-primary w-full" />
           <CardHeader className="space-y-2 text-center pb-8 pt-10">
             <div className="flex justify-center mb-4">
-              <div className="h-16 w-16 bg-primary rounded-full flex items-center justify-center border-4 border-slate-50 shadow-sm">
+              <div className="h-16 w-16 bg-primary rounded-full flex items-center justify-center border-4 border-white shadow-sm">
                 <ShieldCheck className="h-8 w-8 text-slate-700" />
               </div>
             </div>
@@ -185,7 +183,7 @@ export default function LoginPage() {
                     id="username" 
                     type="text"
                     placeholder="Enter your email" 
-                    className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20"
+                    className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20 bg-white"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
@@ -200,7 +198,7 @@ export default function LoginPage() {
                     id="password" 
                     type={showPassword ? "text" : "password"} 
                     placeholder="••••••••" 
-                    className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20"
+                    className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20 bg-white"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -228,7 +226,7 @@ export default function LoginPage() {
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="flex flex-col items-center bg-slate-50 border-t p-6">
+          <CardFooter className="flex flex-col items-center bg-slate-100 border-t p-6">
             <p className="text-[10px] text-slate-400 text-center leading-relaxed font-bold uppercase tracking-widest">
               Authorized access only. Security event logged.
             </p>
@@ -236,17 +234,16 @@ export default function LoginPage() {
         </Card>
       </div>
 
-      {/* Initial Setup Modal */}
       <Dialog open={showSetupModal} onOpenChange={setShowSetupModal}>
-        <DialogContent className="sm:max-w-[425px] border-none shadow-2xl">
+        <DialogContent className="sm:max-w-[425px] border-none shadow-2xl animate-in fade-in duration-150">
           <form onSubmit={handleSetupSubmit}>
             <DialogHeader className="space-y-3">
-              <div className="h-12 w-12 bg-primary/20 rounded-full flex items-center justify-center text-primary mb-2">
+              <div className="h-12 w-12 bg-primary/20 rounded-full flex items-center justify-center text-slate-700 mb-2">
                 <ShieldAlert className="h-6 w-6" />
               </div>
               <DialogTitle className="text-2xl font-bold font-headline text-slate-700">Initial Setup Required</DialogTitle>
               <DialogDescription className="text-slate-500">
-                No administrators found in the system. Please register the first <strong>Super Admin</strong> account to proceed.
+                Please add a new admin. This Super Admin account will be recorded in the system management list.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-6">
@@ -266,7 +263,7 @@ export default function LoginPage() {
                 <Input 
                   id="setup-email" 
                   type="email"
-                  placeholder="admin@callboxinc.com" 
+                  placeholder="admin@medtrack.com" 
                   className="h-11 border-slate-200"
                   value={setupData.email}
                   onChange={(e) => setSetupData({...setupData, email: e.target.value})}
