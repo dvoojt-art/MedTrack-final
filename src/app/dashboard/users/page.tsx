@@ -44,6 +44,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 export default function UserManagementPage() {
   const db = useFirestore();
@@ -65,7 +67,7 @@ export default function UserManagementPage() {
 
   const { data: admins, loading } = useCollection(adminsQuery);
 
-  const handleAddAdmin = async (e: React.FormEvent) => {
+  const handleAddAdmin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!db) return;
 
@@ -78,48 +80,51 @@ export default function UserManagementPage() {
       return;
     }
 
-    setIsSubmitting(true);
-
-    const newAdmin = {
+    const adminDataToSave = {
       ...formData,
       status: "Active",
       addedAt: serverTimestamp(),
     };
 
-    try {
-      await addDoc(collection(db, "admins"), newAdmin);
-      toast({
-        title: "Admin Registered",
-        description: `${formData.fullName} can now log in using their credentials.`,
+    // 1. Immediate UI update (Optimistic)
+    setFormData({ fullName: "", email: "", password: "", role: "Clinic Staff" });
+    setIsDialogOpen(false);
+    
+    toast({
+      title: "Registration Initiated",
+      description: `${adminDataToSave.fullName} is being registered. Access will be available shortly.`,
+    });
+
+    // 2. Background Firestore call without await for faster feedback
+    addDoc(collection(db, "admins"), adminDataToSave)
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: "admins",
+          operation: "create",
+          requestResourceData: adminDataToSave,
+        });
+        errorEmitter.emit("permission-error", permissionError);
       });
-      setFormData({ fullName: "", email: "", password: "", role: "Clinic Staff" });
-      setIsDialogOpen(false);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Could not register user. Check security permissions.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
-  const removeAdmin = async (id: string) => {
+  const removeAdmin = (id: string) => {
     if (!db) return;
-    try {
-      await deleteDoc(doc(db, "admins", id));
-      toast({
-        title: "Access Revoked",
-        description: "User access has been permanently removed.",
+    
+    // Background delete without await
+    deleteDoc(doc(db, "admins", id))
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: `admins/${id}`,
+          operation: "delete",
+        });
+        errorEmitter.emit("permission-error", permissionError);
       });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Could not remove user access.",
-        variant: "destructive"
-      });
-    }
+
+    // Immediate feedback
+    toast({
+      title: "Access Revoked",
+      description: "User access is being removed.",
+    });
   };
 
   return (
@@ -196,15 +201,8 @@ export default function UserManagementPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={isSubmitting} className="w-full">
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving User...
-                    </>
-                  ) : (
-                    "Register & Grant Access"
-                  )}
+                <Button type="submit" className="w-full">
+                  Register & Grant Access
                 </Button>
               </DialogFooter>
             </form>
