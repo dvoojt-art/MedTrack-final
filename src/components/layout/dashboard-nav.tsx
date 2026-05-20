@@ -80,20 +80,20 @@ export function DashboardNav() {
     <>
       <SidebarHeader className="border-b px-4 py-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-slate-800">
             <Stethoscope className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-lg font-bold leading-none text-primary">MedTrack</h1>
+            <h1 className="text-lg font-bold leading-none text-slate-800">MedTrack</h1>
             <p className="text-[10px] text-muted-foreground mt-1 font-bold uppercase tracking-wider flex items-center gap-1">
-              <ShieldCheck className="h-3 w-3" /> Super Admin
+              <ShieldCheck className="h-3 w-3 text-primary" /> Admin Portal
             </p>
           </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="px-3">Core System</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-3 font-bold text-slate-400">Core System</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (
@@ -102,10 +102,11 @@ export function DashboardNav() {
                     asChild 
                     isActive={pathname === item.url}
                     tooltip={item.title}
+                    className="hover:bg-primary/10 data-[active=true]:bg-primary/10 data-[active=true]:text-slate-800"
                   >
                     <Link href={item.url} className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <item.icon className={cn("h-4 w-4", pathname === item.url ? "text-primary" : "text-slate-400")} />
+                      <span className="font-medium">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -115,7 +116,7 @@ export function DashboardNav() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="px-3">Management</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-3 font-bold text-slate-400">Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {managementItems.map((item) => (
@@ -124,10 +125,11 @@ export function DashboardNav() {
                     asChild 
                     isActive={pathname === item.url}
                     tooltip={item.title}
+                    className="hover:bg-primary/10 data-[active=true]:bg-primary/10 data-[active=true]:text-slate-800"
                   >
                     <Link href={item.url} className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <item.icon className={cn("h-4 w-4", pathname === item.url ? "text-primary" : "text-slate-400")} />
+                      <span className="font-medium">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

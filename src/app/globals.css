@@ -24,7 +24,7 @@
     --muted: 215 15% 92%;
     --muted-foreground: 215 15% 44%;
     
-    /* Accent - Softer Charcoal Gray instead of Black */
+    /* Accent - Slate Charcoal Gray */
     --accent: 215 25% 27%;
     --accent-foreground: 47 100% 52%;
     
@@ -43,14 +43,14 @@
     
     --radius: 0.6rem;
     
-    /* Sidebar themed with Charcoal Gray */
-    --sidebar-background: 215 25% 20%;
-    --sidebar-foreground: 47 100% 52%;
+    /* Light Sidebar for Clinical Look */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 25% 27%;
     --sidebar-primary: 47 100% 52%;
     --sidebar-primary-foreground: 215 25% 10%;
-    --sidebar-accent: 215 25% 25%;
-    --sidebar-accent-foreground: 47 100% 52%;
-    --sidebar-border: 215 25% 30%;
+    --sidebar-accent: 210 20% 96%;
+    --sidebar-accent-foreground: 215 25% 27%;
+    --sidebar-border: 214 32% 91%;
     --sidebar-ring: 47 100% 52%;
   }
 }

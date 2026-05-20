@@ -39,7 +39,7 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-slate-50">
-        <Sidebar className="border-r border-slate-200 shadow-xl">
+        <Sidebar className="border-r border-slate-100 bg-white">
           <DashboardNav />
         </Sidebar>
         <SidebarInset className="flex flex-col bg-slate-50">
