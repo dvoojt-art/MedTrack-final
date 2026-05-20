@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,15 +16,15 @@ import Link from "next/link";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
-const DEPARTMENT_POSITIONS: Record<string, string[]> = {
-  "Sales": ["Sales Agent", "Sales Team Lead", "Sales Manager", "Account Executive"],
-  "Marketing": ["Marketing Specialist", "Social Media Manager", "Content Creator", "Marketing Manager"],
-  "Customer Support": ["Support Agent", "Support Lead", "Support Manager", "Technical Support"],
-  "IT Support": ["IT Helpdesk", "Systems Administrator", "Network Engineer", "IT Manager"],
-  "Operations": ["Operations Associate", "Operations Lead", "Operations Manager", "Data Analyst"],
-  "Human Resources": ["HR Generalist", "Recruiter", "HR Manager", "Payroll Specialist"],
-  "Quality Assurance": ["QA Analyst", "QA Lead", "QA Manager", "Compliance Officer"]
-};
+const DEPARTMENTS = [
+  "North America (NAM)",
+  "Asia Pacific (APAC)",
+  "Finance",
+  "HR",
+  "General Services (GenServ)",
+  "IT",
+  "OJT"
+];
 
 export default function PublicPortalPage() {
   const { toast } = useToast();
@@ -41,18 +40,12 @@ export default function PublicPortalPage() {
     age: "",
     gender: "Male",
     department: "",
-    position: "",
     chiefComplaints: "",
   });
 
   const [medicines, setMedicines] = useState([
     { name: "", quantity: 1, dosage: "" }
   ]);
-
-  // Reset position when department changes
-  useEffect(() => {
-    setFormData(prev => ({ ...prev, position: "" }));
-  }, [formData.department]);
 
   const addMedicine = () => {
     setMedicines([...medicines, { name: "", quantity: 1, dosage: "" }]);
@@ -80,7 +73,6 @@ export default function PublicPortalPage() {
       formData.email.trim() !== "" && 
       formData.age.trim() !== "" && 
       formData.department !== "" && 
-      formData.position !== "" && 
       formData.chiefComplaints.trim() !== "";
 
     if (!isFormValid || !isMedicinesValid) {
@@ -147,7 +139,6 @@ export default function PublicPortalPage() {
               age: "",
               gender: "Male",
               department: "",
-              position: "",
               chiefComplaints: "",
             });
             setMedicines([{ name: "", quantity: 1, dosage: "" }]);
@@ -260,25 +251,8 @@ export default function PublicPortalPage() {
                         <SelectValue placeholder="Select Department" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.keys(DEPARTMENT_POSITIONS).map((dept) => (
+                        {DEPARTMENTS.map((dept) => (
                           <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="position" className="text-slate-600">Position</Label>
-                    <Select 
-                      value={formData.position} 
-                      onValueChange={(val) => setFormData({...formData, position: val})}
-                      disabled={!formData.department}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={formData.department ? "Select Position" : "Select Department First"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {formData.department && DEPARTMENT_POSITIONS[formData.department].map((pos) => (
-                          <SelectItem key={pos} value={pos}>{pos}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

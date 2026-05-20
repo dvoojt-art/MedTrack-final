@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo } from "react";
@@ -126,7 +125,7 @@ export default function DashboardOverview() {
                     <div className="ml-4 space-y-1">
                       <p className="text-sm font-medium leading-none">{record.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {record.department} • {record.position}
+                        {record.department}
                       </p>
                     </div>
                     <div className="ml-auto font-medium text-xs">
@@ -160,7 +159,7 @@ export default function DashboardOverview() {
             <div className="rounded-lg bg-white p-4 shadow-sm border border-primary/10">
               <h4 className="text-sm font-semibold text-primary mb-1">AI Recommendation</h4>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Based on current trends, consider checking Paracetamol stock levels due to an increase in Sales department reports.
+                Based on current trends, consider checking Paracetamol stock levels due to an increase in reports from certain departments.
               </p>
               <Button size="sm" variant="outline" asChild className="mt-3 w-full">
                 <Link href="/dashboard/insights">Run Full Analysis</Link>

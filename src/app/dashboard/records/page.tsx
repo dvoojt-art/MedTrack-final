@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -35,7 +34,6 @@ export default function RecordsPage() {
       r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (r.position && r.position.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (r.chiefComplaints && r.chiefComplaints.toLowerCase().includes(searchTerm.toLowerCase())) ||
       r.medicineTaken?.some((m: any) => m.name.toLowerCase().includes(searchTerm.toLowerCase()))
     );
@@ -45,7 +43,7 @@ export default function RecordsPage() {
     if (!records || records.length === 0) return;
     
     // Header row
-    const headers = ["Date", "Time", "Patient Name", "Email", "Age", "Gender", "Department", "Position", "Chief Complaints", "Medicines Issued"];
+    const headers = ["Date", "Time", "Patient Name", "Email", "Age", "Gender", "Department", "Chief Complaints", "Medicines Issued"];
     
     // Map records to CSV rows, ensuring fields with commas are quoted
     const rows = records.map(r => [
@@ -56,7 +54,6 @@ export default function RecordsPage() {
       r.age,
       r.gender,
       `"${r.department.replace(/"/g, '""')}"`,
-      `"${(r.position || "").replace(/"/g, '""')}"`,
       `"${(r.chiefComplaints || "").replace(/"/g, '""')}"`,
       `"${r.medicineTaken?.map((m: any) => `${m.name} (${m.quantity})`).join('; ')}"`
     ]);
@@ -98,7 +95,7 @@ export default function RecordsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by patient, email, position, medicine or symptoms..."
+                placeholder="Search by patient, email, medicine or symptoms..."
                 className="pl-8 h-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -127,7 +124,6 @@ export default function RecordsPage() {
                     <TableHead className="w-[60px] font-bold text-primary text-center">Age</TableHead>
                     <TableHead className="w-[80px] font-bold text-primary">Gender</TableHead>
                     <TableHead className="font-bold text-primary">Department</TableHead>
-                    <TableHead className="font-bold text-primary">Position</TableHead>
                     <TableHead className="font-bold text-primary">Chief Complaints</TableHead>
                     <TableHead className="font-bold text-primary">Medicines Issued</TableHead>
                   </TableRow>
@@ -150,7 +146,6 @@ export default function RecordsPage() {
                             {record.department}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-xs font-medium">{record.position}</TableCell>
                         <TableCell className="max-w-[200px]">
                           <p className="text-xs text-muted-foreground line-clamp-2" title={record.chiefComplaints}>
                             {record.chiefComplaints}
@@ -169,7 +164,7 @@ export default function RecordsPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={10} className="h-48 text-center text-muted-foreground">
+                      <TableCell colSpan={9} className="h-48 text-center text-muted-foreground">
                         {searchTerm ? "No records found matching your search." : "No issuance records logged yet."}
                       </TableCell>
                     </TableRow>
