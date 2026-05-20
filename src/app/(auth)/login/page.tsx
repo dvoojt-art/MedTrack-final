@@ -33,13 +33,9 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showSetupModal, setShowSetupModal] = useState(false);
   
-  // High-speed state initialization
-  const [initialCheckDone, setInitialCheckDone] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("medtrack_system_initialized") === "true";
-    }
-    return false;
-  });
+  // Hydration-safe state initialization
+  const [isMounted, setIsMounted] = useState(false);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   // Setup form state
   const [setupData, setSetupData] = useState({
@@ -49,6 +45,8 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
+    setIsMounted(true);
+    
     // 1. Immediate Session Check
     const isAuth = localStorage.getItem("medtrack_admin_auth") === "true";
     if (isAuth) {
@@ -56,7 +54,13 @@ export default function LoginPage() {
       return;
     }
 
-    // 2. High-speed Admin Existence Check (Background)
+    // 2. High-speed check for local initialization flag
+    const wasInitialized = localStorage.getItem("medtrack_system_initialized") === "true";
+    if (wasInitialized) {
+      setInitialCheckDone(true);
+    }
+
+    // 3. Background Admin Existence Check
     const checkAdminsExist = async () => {
       if (!db) return;
       try {
@@ -74,6 +78,7 @@ export default function LoginPage() {
         setInitialCheckDone(true);
       }
     };
+    
     checkAdminsExist();
   }, [db, router]);
 
@@ -172,6 +177,18 @@ export default function LoginPage() {
     setShowSetupModal(false);
     router.push("/dashboard");
   };
+
+  // Prevent hydration flicker by returning a consistent loader until mounted
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white p-4">
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Initializing System...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-4">
