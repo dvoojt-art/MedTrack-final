@@ -45,30 +45,25 @@ export default function LoginPage() {
     password: ""
   });
 
+  const [emailError, setEmailError] = useState("");
+
   useEffect(() => {
     setIsMounted(true);
-    console.log('[Auth] Login page mounted. Executing security audit...');
     
     const checkAdminsExist = async () => {
-      if (!db) {
-        console.warn('[Auth] Database connection not ready for admin audit.');
-        return;
-      }
+      if (!db) return;
 
       try {
-        console.log('[Auth] Auditing system administrators in Firestore...');
         const adminsRef = collection(db, "admins");
         const q = query(adminsRef, limit(1));
         const snap = await getDocs(q);
         
         if (snap.empty) {
-          console.log('[Auth] CRITICAL: ZERO administrators found. System is in Bootstrap Mode.');
           setIsSystemFresh(true);
           localStorage.removeItem("medtrack_admin_auth");
           localStorage.removeItem("medtrack_auth_role");
           localStorage.removeItem("medtrack_system_initialized");
         } else {
-          console.log(`[Auth] System audit successful: Found ${snap.size} active administrator(s).`);
           localStorage.setItem("medtrack_system_initialized", "true");
           setIsSystemFresh(false);
 
@@ -78,7 +73,7 @@ export default function LoginPage() {
           }
         }
       } catch (e) {
-        console.error('[Auth] Error during system security audit:', e);
+        // Silently handle potential init errors
       } finally {
         setInitialCheckDone(true);
       }
@@ -87,15 +82,24 @@ export default function LoginPage() {
     checkAdminsExist();
   }, [db, router]);
 
+  const validateEmail = (email: string) => {
+    if (email && !email.toLowerCase().endsWith(`@${ORG_DOMAIN}`)) {
+      setEmailError(`Requires official @${ORG_DOMAIN} address`);
+      return false;
+    }
+    setEmailError("");
+    return true;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
+
+    if (!validateEmail(username)) return;
+
     setLoading(true);
 
-    console.log('[Auth] Login attempt initiated for:', username);
-
-    if (isSystemFresh && username.toLowerCase() === "admin@callboxinc.com" && password === "password123") {
-      console.log('[Auth] Bootstrap access granted.');
+    if (isSystemFresh && username.toLowerCase() === `admin@${ORG_DOMAIN}` && password === "password123") {
       localStorage.setItem("medtrack_auth_role", "Super Admin");
       localStorage.setItem("medtrack_admin_auth", "true");
       router.push("/dashboard");
@@ -258,12 +262,20 @@ export default function LoginPage() {
                       id="username" 
                       type="text"
                       placeholder={`Enter your @${ORG_DOMAIN} email`} 
-                      className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20 bg-white"
+                      className={`pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20 bg-white ${emailError ? 'border-destructive ring-destructive/20' : ''}`}
                       value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      onChange={(e) => {
+                        setUsername(e.target.value);
+                        validateEmail(e.target.value);
+                      }}
                       required
                     />
                   </div>
+                  {emailError && (
+                    <p className="text-[10px] font-bold text-destructive uppercase tracking-tight pl-1">
+                      {emailError}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-xs font-bold uppercase text-slate-500">Password</Label>
