@@ -8,28 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, ArrowLeft, Send, CheckCircle2, UserCheck, UserX } from "lucide-react";
 import { ReceiptView } from "@/components/records/receipt-view";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, useCollection } from "@/firebase";
-import { collection, addDoc, serverTimestamp, query, where, limit } from "firebase/firestore";
-
-const DEPARTMENTS = [
-  "North America (NAM)",
-  "Asia Pacific (APAC)",
-  "Finance",
-  "HR",
-  "General Services (GenServ)",
-  "IT",
-  "OJT"
-];
 
 const ORG_DOMAIN = "callboxinc.com";
 
 export default function NewRecordPage() {
   const router = useRouter();
-  const db = useFirestore();
   const { toast } = useToast();
   const [showReceipt, setShowReceipt] = useState(false);
   const [submittedRecord, setSubmittedRecord] = useState<any | null>(null);
@@ -50,46 +36,32 @@ export default function NewRecordPage() {
     { name: "", quantity: 1, dosage: "" }
   ]);
 
-  // Personnel Verification logic
+  // Personnel Verification logic using Local Storage
   useEffect(() => {
-    if (!db || formData.email.length < 5 || !formData.email.endsWith(`@${ORG_DOMAIN}`)) {
+    if (formData.email.length < 5 || !formData.email.endsWith(`@${ORG_DOMAIN}`)) {
       setIsVerified(null);
       return;
     }
 
-    const checkEmployee = async () => {
-      const q = query(
-        collection(db, "employees"),
-        where("email", "==", formData.email.toLowerCase()),
-        limit(1)
-      );
+    const checkEmployee = () => {
+      const storedEmployees = JSON.parse(localStorage.getItem("medtrack_employees") || "[]");
+      const found = storedEmployees.find((e: any) => e.email.toLowerCase() === formData.email.toLowerCase());
       
-      const timeoutId = setTimeout(() => {
-        // Simple debounced search
-      }, 500);
-
-      try {
-        const { getDocs } = await import("firebase/firestore");
-        const snapshot = await getDocs(q);
-        if (!snapshot.empty) {
-          const emp = snapshot.docs[0].data();
-          setFormData(prev => ({
-            ...prev,
-            name: emp.fullName,
-            department: emp.department
-          }));
-          setIsVerified(true);
-        } else {
-          setIsVerified(false);
-        }
-      } catch (e) {
-        console.error("Verification error", e);
+      if (found) {
+        setFormData(prev => ({
+          ...prev,
+          name: found.fullName,
+          department: found.department
+        }));
+        setIsVerified(true);
+      } else {
+        setIsVerified(false);
       }
-      return () => clearTimeout(timeoutId);
     };
 
-    checkEmployee();
-  }, [formData.email, db]);
+    const timer = setTimeout(checkEmployee, 400);
+    return () => clearTimeout(timer);
+  }, [formData.email]);
 
   const addMedicine = () => {
     setMedicines([...medicines, { name: "", quantity: 1, dosage: "" }]);
@@ -111,8 +83,6 @@ export default function NewRecordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!db) return;
-
     if (!isVerified) {
       toast({
         title: "Personnel Not Found",
@@ -130,35 +100,30 @@ export default function NewRecordPage() {
 
     const record = {
       ...formData,
+      id: Math.random().toString(36).substr(2, 9),
       date,
       time,
       age: parseInt(formData.age) || 0,
       medicineTaken: medicines,
-      createdAt: serverTimestamp(),
+      createdAt: new Date().toISOString(),
     };
 
-    try {
-      await addDoc(collection(db, "issuances"), record);
-      setSubmittedRecord(record);
-      setIsSuccess(true);
-      setIsSubmitting(false);
+    // Save to Local Storage
+    const existingLogs = JSON.parse(localStorage.getItem("medtrack_issuances") || "[]");
+    localStorage.setItem("medtrack_issuances", JSON.stringify([...existingLogs, record]));
 
-      setTimeout(() => {
-        setIsSuccess(false);
-        setShowReceipt(true);
-        toast({
-          title: "Log Success",
-          description: "Clinical record finalized.",
-        });
-      }, 1200);
-    } catch (error) {
+    setSubmittedRecord(record);
+    setIsSuccess(true);
+    setIsSubmitting(false);
+
+    setTimeout(() => {
+      setIsSuccess(false);
+      setShowReceipt(true);
       toast({
-        title: "Error",
-        description: "Failed to save clinical record.",
-        variant: "destructive"
+        title: "Log Success",
+        description: "Clinical record finalized.",
       });
-      setIsSubmitting(false);
-    }
+    }, 1200);
   };
 
   if (showReceipt && submittedRecord) {

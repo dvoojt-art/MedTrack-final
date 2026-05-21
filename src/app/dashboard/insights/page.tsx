@@ -1,34 +1,27 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Lightbulb, RefreshCw, AlertTriangle, CheckCircle, ArrowRight, ClipboardList } from "lucide-react";
 import { getRestockRecommendations, type RestockRecommendationOutput } from "@/ai/flows/automated-inventory-insight-flow";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, useCollection } from "@/firebase";
-import { collection } from "firebase/firestore";
 
 export default function InsightsPage() {
   const [loading, setLoading] = useState(false);
   const [insights, setInsights] = useState<RestockRecommendationOutput | null>(null);
+  const [records, setRecords] = useState<any[]>([]);
   const { toast } = useToast();
-  const db = useFirestore();
 
-  const issuancesQuery = useMemo(() => {
-    if (!db) return null;
-    return collection(db, "issuances");
-  }, [db]);
-
-  const { data: records, loading: recordsLoading } = useCollection(issuancesQuery);
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("medtrack_issuances") || "[]");
+    setRecords(stored);
+  }, []);
 
   const generateInsights = async () => {
-    console.log('[Genkit] Initiating AI Inventory Analysis...');
-    
-    if (!records || records.length === 0) {
-      console.warn('[Genkit] Insight generation failed: No historical records found in database.');
+    if (records.length === 0) {
       toast({
         title: "Insufficient Data",
         description: "There are no medicine issuance records available to analyze yet.",
@@ -50,11 +43,7 @@ export default function InsightsPage() {
         medicineTaken: r.medicineTaken || [],
       }));
 
-      console.log(`[Genkit] Sending ${formattedRecords.length} records to AI flow.`);
-      
       const result = await getRestockRecommendations({ records: formattedRecords });
-      
-      console.log('[Genkit] AI analysis successful. Received recommendations:', result.recommendations.length);
       setInsights(result);
       
       toast({
@@ -82,7 +71,7 @@ export default function InsightsPage() {
         </div>
         <Button 
           onClick={generateInsights} 
-          disabled={loading || recordsLoading}
+          disabled={loading}
           className="gap-2 bg-primary"
         >
           {loading ? (
@@ -102,10 +91,10 @@ export default function InsightsPage() {
             </div>
             <h3 className="text-xl font-bold font-headline">Ready for Analysis</h3>
             <p className="text-muted-foreground max-w-sm mt-2">
-              Our AI tool will analyze live patient symptoms and medicine usage from your database to predict inventory needs.
+              Our AI tool will analyze patient symptoms and medicine usage from your local session to predict inventory needs.
             </p>
-            <Button variant="outline" onClick={generateInsights} className="mt-6" disabled={recordsLoading}>
-              {recordsLoading ? "Loading Records..." : "Start Analysis Now"}
+            <Button variant="outline" onClick={generateInsights} className="mt-6">
+              Start Analysis Now
             </Button>
           </CardContent>
         </Card>

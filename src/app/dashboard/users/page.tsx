@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
   Card, 
   CardContent, 
@@ -28,10 +29,9 @@ import {
   Lock,
   Users as UsersIcon,
   Eye,
-  EyeOff
+  EyeOff,
+  Loader2
 } from "lucide-react";
-import { useFirestore, useCollection } from "@/firebase";
-import { collection, addDoc, serverTimestamp, deleteDoc, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -47,11 +47,12 @@ import {
 const ORG_DOMAIN = "callboxinc.com";
 
 export default function UserManagementPage() {
-  const db = useFirestore();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [admins, setAdmins] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -60,16 +61,19 @@ export default function UserManagementPage() {
     role: "Clinic Staff",
   });
 
-  const adminsQuery = useMemo(() => {
-    if (!db) return null;
-    return collection(db, "admins");
-  }, [db]);
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("medtrack_admins") || "[]");
+    setAdmins(stored);
+    setLoading(false);
+  }, []);
 
-  const { data: admins, loading } = useCollection(adminsQuery);
+  const saveAdmins = (updated: any[]) => {
+    localStorage.setItem("medtrack_admins", JSON.stringify(updated));
+    setAdmins(updated);
+  };
 
   const handleAddAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!db) return;
 
     if (!formData.email.toLowerCase().endsWith(`@${ORG_DOMAIN}`)) {
       toast({
@@ -81,47 +85,33 @@ export default function UserManagementPage() {
     }
 
     setIsSubmitting(true);
-    try {
-      await addDoc(collection(db, "admins"), {
-        ...formData,
-        status: "Active",
-        addedAt: serverTimestamp(),
-      });
+    const newAdmin = {
+      ...formData,
+      id: Math.random().toString(36).substr(2, 9),
+      status: "Active",
+      addedAt: new Date().toISOString(),
+    };
 
-      toast({
-        title: "Admin Registered",
-        description: `${formData.fullName} has been granted dashboard access.`,
-      });
+    saveAdmins([...admins, newAdmin]);
 
-      setFormData({ fullName: "", email: "", password: "", role: "Clinic Staff" });
-      setIsDialogOpen(false);
-      setShowPassword(false);
-    } catch (error) {
-      toast({
-        title: "Registration Failed",
-        description: "Could not create administrator account.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(true);
-    }
+    toast({
+      title: "Admin Registered",
+      description: `${formData.fullName} has been granted dashboard access.`,
+    });
+
+    setFormData({ fullName: "", email: "", password: "", role: "Clinic Staff" });
+    setIsDialogOpen(false);
+    setShowPassword(false);
+    setIsSubmitting(false);
   };
 
-  const removeAdmin = async (id: string) => {
-    if (!db) return;
-    try {
-      await deleteDoc(doc(db, "admins", id));
-      toast({
-        title: "Access Revoked",
-        description: "User has been removed from the system.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to revoke user access.",
-        variant: "destructive"
-      });
-    }
+  const removeAdmin = (id: string) => {
+    const updated = admins.filter(a => a.id !== id);
+    saveAdmins(updated);
+    toast({
+      title: "Access Revoked",
+      description: "User has been removed from the system.",
+    });
   };
 
   return (
@@ -205,7 +195,7 @@ export default function UserManagementPage() {
               </div>
               <DialogFooter>
                 <Button type="submit" className="w-full bg-accent text-primary font-black uppercase tracking-widest" disabled={isSubmitting}>
-                  Register & Grant Access
+                  {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Register & Grant Access"}
                 </Button>
               </DialogFooter>
             </form>

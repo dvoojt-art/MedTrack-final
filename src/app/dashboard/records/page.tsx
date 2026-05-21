@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
   Table, 
   TableBody, 
@@ -15,39 +15,37 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Download, Search, Filter, FileText, FileSpreadsheet, File } from "lucide-react";
-import { useFirestore, useCollection } from "@/firebase";
-import { collection, query, orderBy } from "firebase/firestore";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import jsPDF from "jspdf";
+import jsPDF from "jsPDF";
 import autoTable from "jspdf-autotable";
 import { Document, Packer, Paragraph, Table as DocxTable, TableCell as DocxTableCell, TableRow as DocxTableRow, WidthType, AlignmentType, HeadingLevel } from "docx";
 import { saveAs } from "file-saver";
 
 export default function RecordsPage() {
-  const db = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const issuancesQuery = useMemo(() => {
-    if (!db) return null;
-    return query(collection(db, "issuances"), orderBy("createdAt", "desc"));
-  }, [db]);
-
-  const { data: records, loading } = useCollection(issuancesQuery);
+  useEffect(() => {
+    // Fetch from Local Storage
+    const stored = JSON.parse(localStorage.getItem("medtrack_issuances") || "[]");
+    setRecords(stored);
+    setLoading(false);
+  }, []);
 
   const filteredRecords = useMemo(() => {
-    if (!records) return [];
     return records.filter(r => 
       r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (r.chiefComplaints && r.chiefComplaints.toLowerCase().includes(searchTerm.toLowerCase())) ||
       r.medicineTaken?.some((m: any) => m.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [records, searchTerm]);
 
   const exportAsCSV = () => {

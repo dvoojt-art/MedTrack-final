@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { 
   Table, 
   TableBody, 
@@ -29,8 +29,6 @@ import {
   FileText,
   File
 } from "lucide-react";
-import { useFirestore, useCollection } from "@/firebase";
-import { collection, addDoc, serverTimestamp, deleteDoc, doc, query, orderBy, writeBatch } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -48,7 +46,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import jsPDF from "jspdf";
+import jsPDF from "jsPDF";
 import autoTable from "jspdf-autotable";
 import { Document, Packer, Paragraph, Table as DocxTable, TableCell as DocxTableCell, TableRow as DocxTableRow, WidthType, AlignmentType, HeadingLevel } from "docx";
 import { saveAs } from "file-saver";
@@ -66,7 +64,6 @@ const DEPARTMENTS = [
 const ORG_DOMAIN = "callboxinc.com";
 
 export default function EmployeeMasterListPage() {
-  const db = useFirestore();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -74,6 +71,8 @@ export default function EmployeeMasterListPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -82,12 +81,17 @@ export default function EmployeeMasterListPage() {
     employeeId: "",
   });
 
-  const employeesQuery = useMemo(() => {
-    if (!db) return null;
-    return query(collection(db, "employees"), orderBy("fullName", "asc"));
-  }, [db]);
+  useEffect(() => {
+    // Load from Local Storage
+    const stored = JSON.parse(localStorage.getItem("medtrack_employees") || "[]");
+    setEmployees(stored);
+    setLoading(false);
+  }, []);
 
-  const { data: employees, loading } = useCollection(employeesQuery);
+  const saveEmployees = (updated: any[]) => {
+    localStorage.setItem("medtrack_employees", JSON.stringify(updated));
+    setEmployees(updated);
+  };
 
   const validateEmail = (email: string) => {
     return email.toLowerCase().endsWith(`@${ORG_DOMAIN}`);
@@ -95,7 +99,6 @@ export default function EmployeeMasterListPage() {
 
   const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!db) return;
 
     if (!validateEmail(formData.email)) {
       toast({
@@ -107,33 +110,26 @@ export default function EmployeeMasterListPage() {
     }
 
     setIsSubmitting(true);
-    try {
-      await addDoc(collection(db, "employees"), {
-        ...formData,
-        status: "Active",
-        createdAt: serverTimestamp(),
-      });
+    const newEmp = {
+      ...formData,
+      id: Math.random().toString(36).substr(2, 9),
+      status: "Active",
+      createdAt: new Date().toISOString(),
+    };
 
-      toast({
-        title: "Employee Added",
-        description: `${formData.fullName} has been added to the Master List.`,
-      });
+    saveEmployees([...employees, newEmp]);
+    
+    toast({
+      title: "Employee Added",
+      description: `${formData.fullName} has been added to the Master List.`,
+    });
 
-      setFormData({ fullName: "", email: "", department: "", employeeId: "" });
-      setIsDialogOpen(false);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add employee to the system.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    setFormData({ fullName: "", email: "", department: "", employeeId: "" });
+    setIsDialogOpen(false);
+    setIsSubmitting(false);
   };
 
   const filteredEmployees = useMemo(() => {
-    if (!employees) return [];
     return employees.filter(emp => {
       const matchesSearch = 
         emp.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -251,17 +247,16 @@ export default function EmployeeMasterListPage() {
     saveAs(blob, `employee_directory_${new Date().toISOString().split('T')[0]}.docx`);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !db) return;
+    if (!file) return;
 
     setIsImporting(true);
     const reader = new FileReader();
-    reader.onload = async (event) => {
+    reader.onload = (event) => {
       const text = event.target?.result as string;
       const lines = text.split('\n');
-      const batch = writeBatch(db);
-      let count = 0;
+      const newEntries: any[] = [];
 
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
@@ -271,54 +266,36 @@ export default function EmployeeMasterListPage() {
         const [name, email, dept, id] = parts;
         
         if (name && email && validateEmail(email)) {
-          const newDocRef = doc(collection(db, "employees"));
-          batch.set(newDocRef, {
+          newEntries.push({
+            id: Math.random().toString(36).substr(2, 9),
             fullName: name,
             email: email,
             department: dept || "General Services (GenServ)",
             employeeId: id || "",
             status: "Active",
-            createdAt: serverTimestamp(),
+            createdAt: new Date().toISOString(),
           });
-          count++;
         }
       }
 
-      try {
-        await batch.commit();
-        toast({
-          title: "Import Successful",
-          description: `Successfully added ${count} verified personnel to the clinical list.`,
-        });
-      } catch (error) {
-        toast({
-          title: "Import Failed",
-          description: "There was an error processing the CSV file.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsImporting(false);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      }
+      saveEmployees([...employees, ...newEntries]);
+      toast({
+        title: "Import Successful",
+        description: `Successfully added ${newEntries.length} verified personnel to the clinical list.`,
+      });
+      setIsImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     };
     reader.readAsText(file);
   };
 
-  const removeEmployee = async (id: string) => {
-    if (!db) return;
-    try {
-      await deleteDoc(doc(db, "employees", id));
-      toast({
-        title: "Employee Removed",
-        description: "Record deleted from the master list.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to remove employee.",
-        variant: "destructive"
-      });
-    }
+  const removeEmployee = (id: string) => {
+    const updated = employees.filter(emp => emp.id !== id);
+    saveEmployees(updated);
+    toast({
+      title: "Employee Removed",
+      description: "Record deleted from the master list.",
+    });
   };
 
   return (

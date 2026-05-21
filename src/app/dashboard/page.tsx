@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { 
   ClipboardList, 
@@ -12,46 +12,35 @@ import {
   PlusCircle,
   Stethoscope
 } from "lucide-react";
-import { useFirestore, useCollection } from "@/firebase";
-import { collection, query, orderBy, limit } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 
 export default function DashboardOverview() {
-  const db = useFirestore();
+  const [records, setRecords] = useState<any[]>([]);
+  const [admins, setAdmins] = useState<any[]>([]);
 
-  const issuancesQuery = useMemo(() => {
-    if (!db) return null;
-    return query(collection(db, "issuances"), orderBy("createdAt", "desc"), limit(5));
-  }, [db]);
-
-  const allIssuancesQuery = useMemo(() => {
-    if (!db) return null;
-    return collection(db, "issuances");
-  }, [db]);
-
-  const adminsQuery = useMemo(() => {
-    if (!db) return null;
-    return collection(db, "admins");
-  }, [db]);
-
-  const { data: recentRecords, loading: loadingRecent } = useCollection(issuancesQuery);
-  const { data: allRecords } = useCollection(allIssuancesQuery);
-  const { data: admins } = useCollection(adminsQuery);
+  useEffect(() => {
+    const storedLogs = JSON.parse(localStorage.getItem("medtrack_issuances") || "[]");
+    const storedAdmins = JSON.parse(localStorage.getItem("medtrack_admins") || "[]");
+    setRecords(storedLogs);
+    setAdmins(storedAdmins);
+  }, []);
 
   const stats = useMemo(() => {
-    if (!allRecords) return { total: 0, today: 0, medicines: 0 };
-    
     const today = new Date().toISOString().split('T')[0];
-    const todayRecords = allRecords.filter(r => r.date === today);
+    const todayRecords = records.filter(r => r.date === today);
     
     return {
-      total: allRecords.length,
+      total: records.length,
       today: todayRecords.length,
-      medicines: allRecords.reduce((acc, curr) => acc + (curr.medicineTaken?.length || 0), 0)
+      medicines: records.reduce((acc, curr) => acc + (curr.medicineTaken?.length || 0), 0)
     };
-  }, [allRecords]);
+  }, [records]);
+
+  const recentRecords = useMemo(() => {
+    return [...records].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+  }, [records]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -106,7 +95,7 @@ export default function DashboardOverview() {
             <Users className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{admins?.length || 1}</div>
+            <div className="text-2xl font-bold">{admins.length || 1}</div>
             <p className="text-xs text-muted-foreground">Authorized portal users</p>
           </CardContent>
         </Card>
@@ -120,7 +109,7 @@ export default function DashboardOverview() {
           </CardHeader>
           <CardContent>
             <div className="space-y-8">
-              {recentRecords && recentRecords.length > 0 ? (
+              {recentRecords.length > 0 ? (
                 recentRecords.map((record) => (
                   <div key={record.id} className="flex items-center">
                     <div className="ml-4 space-y-1">
@@ -141,7 +130,7 @@ export default function DashboardOverview() {
                 </div>
               )}
             </div>
-            {recentRecords && recentRecords.length > 0 && (
+            {recentRecords.length > 0 && (
               <Button variant="link" asChild className="mt-4 p-0">
                 <Link href="/dashboard/records">View all logs</Link>
               </Button>
