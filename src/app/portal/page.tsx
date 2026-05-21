@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Send, Stethoscope, Home, CheckCircle2, UserCheck, UserX } from "lucide-react";
+import { Plus, Trash2, Send, Stethoscope, Home, CheckCircle2, UserCheck, UserX, AlertCircle } from "lucide-react";
 import { ReceiptView } from "@/components/records/receipt-view";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore } from "@/firebase";
@@ -188,7 +188,7 @@ export default function PublicPortalPage() {
         </div>
         <Button variant="ghost" size="sm" asChild className="text-accent hover:text-primary font-bold uppercase text-[10px]">
           <Link href="/" className="gap-2">
-            <Home className="h-4 w-4" /> System Home
+            <Home className="h-4 w-4" /> Home
           </Link>
         </Button>
       </header>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useRef } from "react";
@@ -23,7 +24,10 @@ import {
   CheckCircle2, 
   Upload,
   FileSpreadsheet,
-  Filter
+  Filter,
+  Download,
+  FileText,
+  File
 } from "lucide-react";
 import { useFirestore, useCollection } from "@/firebase";
 import { collection, addDoc, serverTimestamp, deleteDoc, doc, query, orderBy, writeBatch } from "firebase/firestore";
@@ -38,6 +42,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Document, Packer, Paragraph, Table as DocxTable, TableCell as DocxTableCell, TableRow as DocxTableRow, WidthType, AlignmentType, HeadingLevel } from "docx";
+import { saveAs } from "file-saver";
 
 const DEPARTMENTS = [
   "North America (NAM)",
@@ -118,6 +132,125 @@ export default function EmployeeMasterListPage() {
     }
   };
 
+  const filteredEmployees = useMemo(() => {
+    if (!employees) return [];
+    return employees.filter(emp => {
+      const matchesSearch = 
+        emp.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.employeeId?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesDept = deptFilter === "All" || emp.department === deptFilter;
+      
+      return matchesSearch && matchesDept;
+    });
+  }, [employees, searchTerm, deptFilter]);
+
+  const exportAsCSV = () => {
+    if (!filteredEmployees || filteredEmployees.length === 0) return;
+    
+    const headers = ["Full Name", "Email", "Department", "Employee ID", "Status"];
+    const rows = filteredEmployees.map(emp => [
+      `"${emp.fullName.replace(/"/g, '""')}"`,
+      `"${emp.email.replace(/"/g, '""')}"`,
+      `"${emp.department.replace(/"/g, '""')}"`,
+      `"${(emp.employeeId || "").replace(/"/g, '""')}"`,
+      emp.status
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `employee_directory_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportAsPDF = () => {
+    if (!filteredEmployees || filteredEmployees.length === 0) return;
+
+    const doc = new jsPDF('p', 'mm', 'a4');
+    doc.setFontSize(18);
+    doc.text("Clinical Directory Master List", 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Total Personnel: ${filteredEmployees.length} | Date: ${new Date().toLocaleDateString()}`, 14, 30);
+
+    const tableHeaders = [["Name", "Work Email", "Department", "ID", "Status"]];
+    const tableData = filteredEmployees.map(emp => [
+      emp.fullName,
+      emp.email,
+      emp.department,
+      emp.employeeId || "—",
+      emp.status
+    ]);
+
+    autoTable(doc, {
+      head: tableHeaders,
+      body: tableData,
+      startY: 35,
+      theme: 'grid',
+      headStyles: { fillColor: [51, 65, 85], textColor: [255, 202, 9] },
+      styles: { fontSize: 8 },
+    });
+
+    doc.save(`employee_directory_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const exportAsDOCX = async () => {
+    if (!filteredEmployees || filteredEmployees.length === 0) return;
+
+    const tableRows = filteredEmployees.map(emp => 
+      new DocxTableRow({
+        children: [
+          new DocxTableCell({ children: [new Paragraph(emp.fullName || "")] }),
+          new DocxTableCell({ children: [new Paragraph(emp.email || "")] }),
+          new DocxTableCell({ children: [new Paragraph(emp.department || "")] }),
+          new DocxTableCell({ children: [new Paragraph(emp.status || "")] }),
+        ],
+      })
+    );
+
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({
+            text: "Callbox Davao Clinical Directory",
+            heading: HeadingLevel.HEADING_1,
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({
+            text: `Authorized Personnel List | Count: ${filteredEmployees.length}`,
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({ text: "" }),
+          new DocxTable({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [
+              new DocxTableRow({
+                children: [
+                  new DocxTableCell({ children: [new Paragraph({ text: "Name", style: "bold" })] }),
+                  new DocxTableCell({ children: [new Paragraph({ text: "Email", style: "bold" })] }),
+                  new DocxTableCell({ children: [new Paragraph({ text: "Department", style: "bold" })] }),
+                  new DocxTableCell({ children: [new Paragraph({ text: "Status", style: "bold" })] }),
+                ],
+              }),
+              ...tableRows,
+            ],
+          }),
+        ],
+      }],
+    });
+
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `employee_directory_${new Date().toISOString().split('T')[0]}.docx`);
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !db) return;
@@ -187,20 +320,6 @@ export default function EmployeeMasterListPage() {
     }
   };
 
-  const filteredEmployees = useMemo(() => {
-    if (!employees) return [];
-    return employees.filter(emp => {
-      const matchesSearch = 
-        emp.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.employeeId?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesDept = deptFilter === "All" || emp.department === deptFilter;
-      
-      return matchesSearch && matchesDept;
-    });
-  }, [employees, searchTerm, deptFilter]);
-
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -226,6 +345,25 @@ export default function EmployeeMasterListPage() {
             {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             Import CSV
           </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2 border-slate-200 text-slate-600 font-bold uppercase text-[10px]" disabled={!filteredEmployees.length}>
+                <Download className="h-4 w-4" /> Export List
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={exportAsPDF} className="gap-2 cursor-pointer">
+                <FileText className="h-4 w-4 text-red-500" /> Export as PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAsDOCX} className="gap-2 cursor-pointer">
+                <File className="h-4 w-4 text-blue-500" /> Export as DOCX
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAsCSV} className="gap-2 cursor-pointer">
+                <FileSpreadsheet className="h-4 w-4 text-emerald-500" /> Export as CSV
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>

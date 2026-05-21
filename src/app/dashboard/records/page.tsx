@@ -14,9 +14,19 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Download, Search, Filter } from "lucide-react";
+import { Download, Search, Filter, FileText, FileSpreadsheet, File } from "lucide-react";
 import { useFirestore, useCollection } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Document, Packer, Paragraph, Table as DocxTable, TableCell as DocxTableCell, TableRow as DocxTableRow, WidthType, AlignmentType, HeadingLevel } from "docx";
+import { saveAs } from "file-saver";
 
 export default function RecordsPage() {
   const db = useFirestore();
@@ -40,11 +50,11 @@ export default function RecordsPage() {
     );
   }, [records, searchTerm]);
 
-  const exportData = () => {
-    if (!records || records.length === 0) return;
+  const exportAsCSV = () => {
+    if (!filteredRecords || filteredRecords.length === 0) return;
     
     const headers = ["Date", "Time", "Patient Name", "Email", "Age", "Gender", "Department", "Chief Complaints", "Medicines Issued"];
-    const rows = records.map(r => [
+    const rows = filteredRecords.map(r => [
       r.date,
       r.time,
       `"${r.name.replace(/"/g, '""')}"`,
@@ -68,17 +78,114 @@ export default function RecordsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const exportAsPDF = () => {
+    if (!filteredRecords || filteredRecords.length === 0) return;
+
+    const doc = new jsPDF('l', 'mm', 'a4');
+    doc.setFontSize(18);
+    doc.text("MedTrack Medicine Issuance Report", 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+
+    const tableHeaders = [["Date", "Time", "Patient Name", "Email", "Dept", "Medicines"]];
+    const tableData = filteredRecords.map(r => [
+      r.date,
+      r.time,
+      r.name,
+      r.email || "N/A",
+      r.department,
+      r.medicineTaken?.map((m: any) => `${m.name} (${m.quantity})`).join(', ')
+    ]);
+
+    autoTable(doc, {
+      head: tableHeaders,
+      body: tableData,
+      startY: 35,
+      theme: 'grid',
+      headStyles: { fillColor: [51, 65, 85], textColor: [255, 202, 9] },
+      styles: { fontSize: 8 },
+    });
+
+    doc.save(`medtrack_records_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const exportAsDOCX = async () => {
+    if (!filteredRecords || filteredRecords.length === 0) return;
+
+    const tableRows = filteredRecords.map(r => 
+      new DocxTableRow({
+        children: [
+          new DocxTableCell({ children: [new Paragraph(r.date || "")] }),
+          new DocxTableCell({ children: [new Paragraph(r.name || "")] }),
+          new DocxTableCell({ children: [new Paragraph(r.department || "")] }),
+          new DocxTableCell({ children: [new Paragraph(r.medicineTaken?.map((m: any) => `${m.name}(${m.quantity})`).join(', ') || "")] }),
+        ],
+      })
+    );
+
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({
+            text: "MedTrack Clinical Issuance Record",
+            heading: HeadingLevel.HEADING_1,
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({
+            text: `Generated on: ${new Date().toLocaleString()}`,
+            alignment: AlignmentType.RIGHT,
+          }),
+          new Paragraph({ text: "" }),
+          new DocxTable({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [
+              new DocxTableRow({
+                children: [
+                  new DocxTableCell({ children: [new Paragraph({ text: "Date", style: "bold" })] }),
+                  new DocxTableCell({ children: [new Paragraph({ text: "Patient", style: "bold" })] }),
+                  new DocxTableCell({ children: [new Paragraph({ text: "Department", style: "bold" })] }),
+                  new DocxTableCell({ children: [new Paragraph({ text: "Medicines", style: "bold" })] }),
+                ],
+              }),
+              ...tableRows,
+            ],
+          }),
+        ],
+      }],
+    });
+
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `medtrack_records_${new Date().toISOString().split('T')[0]}.docx`);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline tracking-tight text-accent">Medicine Issuance Logs</h1>
+          <h1 className="text-3xl font-bold font-headline tracking-tight text-accent uppercase">Medicine Issuance Logs</h1>
           <p className="text-muted-foreground mt-1 text-slate-500 font-medium">Real-time distribution records.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={exportData} disabled={loading || !records?.length} className="gap-2 border-slate-200">
-            <Download className="h-4 w-4" /> Export CSV
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={loading || !filteredRecords?.length} className="gap-2 border-slate-200">
+                <Download className="h-4 w-4" /> Export Report
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={exportAsPDF} className="gap-2 cursor-pointer">
+                <FileText className="h-4 w-4 text-red-500" /> Export as PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAsDOCX} className="gap-2 cursor-pointer">
+                <File className="h-4 w-4 text-blue-500" /> Export as DOCX
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAsCSV} className="gap-2 cursor-pointer">
+                <FileSpreadsheet className="h-4 w-4 text-emerald-500" /> Export as CSV
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -152,7 +259,9 @@ export default function RecordsPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={9} className="h-48 text-center text-slate-400 font-medium italic">
-                      {loading ? "" : searchTerm ? "No records found matching your search." : "No issuance records logged yet."}
+                      {loading ? (
+                        "Loading records..."
+                      ) : searchTerm ? "No records found matching your search." : "No issuance records logged yet."}
                     </TableCell>
                   </TableRow>
                 )}
