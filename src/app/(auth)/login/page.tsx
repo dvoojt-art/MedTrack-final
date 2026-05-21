@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Lock, User, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
+import { ShieldCheck, Lock, User, ArrowLeft, Loader2, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 
@@ -22,6 +22,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState(false);
   
   const [isMounted, setIsMounted] = useState(false);
 
@@ -36,6 +37,7 @@ export default function LoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
+    setLoginError(false);
 
     if (!validateEmail(username)) {
       toast({
@@ -56,14 +58,15 @@ export default function LoginPage() {
         localStorage.setItem("medtrack_system_initialized", "true");
         router.push("/dashboard");
       } else {
+        setLoginError(true);
         toast({
           title: "Access Denied",
-          description: "Incorrect email or password. Please try again.",
+          description: "Incorrect password. Please try again.",
           variant: "destructive",
         });
         setLoading(false);
       }
-    }, 800);
+    }, 600);
   };
 
   if (!isMounted) return null;
@@ -96,37 +99,50 @@ export default function LoginPage() {
                 <div className="space-y-2">
                   <Label htmlFor="username" className="text-xs font-bold uppercase text-slate-500">Work Email</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                    <User className={`absolute left-3 top-3 h-5 w-5 ${username && !validateEmail(username) ? 'text-destructive' : 'text-slate-400'}`} />
                     <Input 
                       id="username" 
                       type="text"
                       placeholder={`username@${ORG_DOMAIN}`} 
                       className={`pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20 bg-white ${username && !validateEmail(username) ? 'border-destructive ring-destructive/20' : ''}`}
                       value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      onChange={(e) => {
+                        setUsername(e.target.value);
+                        setLoginError(false);
+                      }}
                       required
                     />
                   </div>
                   {username && !validateEmail(username) && (
-                    <p className="text-[10px] font-bold text-destructive uppercase pl-1">Requires official @{ORG_DOMAIN} address</p>
+                    <p className="text-[10px] font-bold text-destructive uppercase pl-1 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" /> Requires official @{ORG_DOMAIN} address
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-xs font-bold uppercase text-slate-500">Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                    <Lock className={`absolute left-3 top-3 h-5 w-5 ${loginError ? 'text-destructive' : 'text-slate-400'}`} />
                     <Input 
                       id="password" 
                       type={showPassword ? "text" : "password"} 
-                      className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20 bg-white"
+                      className={`pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20 bg-white ${loginError ? 'border-destructive ring-destructive/20' : ''}`}
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setLoginError(false);
+                      }}
                       required
                     />
                     <button type="button" className="absolute right-3 top-3 text-slate-400 hover:text-primary transition-colors" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
+                  {loginError && (
+                    <p className="text-[10px] font-bold text-destructive uppercase pl-1 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" /> Incorrect password for this account
+                    </p>
+                  )}
                 </div>
                 <Button type="submit" className="w-full h-12 text-md font-bold bg-accent hover:bg-accent/90 text-primary shadow-lg mt-4" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Access Dashboard"}
