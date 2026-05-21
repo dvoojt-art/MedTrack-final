@@ -7,15 +7,17 @@ import { getAuth } from 'firebase/auth';
 import { firebaseConfig } from './config';
 
 export function initializeFirebase() {
+  if (typeof window === 'undefined') {
+    return { firebaseApp: null, firestore: null, auth: null };
+  }
+
   try {
-    console.log('[Firebase] Initializing Firebase...');
     const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     const firestore = getFirestore(firebaseApp);
     const auth = getAuth(firebaseApp);
-    console.log('[Firebase] Initialization successful.');
     return { firebaseApp, firestore, auth };
   } catch (error) {
-    console.error('[Firebase] Initialization failed:', error);
+    console.error('[Firebase] Initialization error:', error);
     throw error;
   }
 }

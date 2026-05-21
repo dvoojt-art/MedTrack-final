@@ -7,21 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Lock, User, ArrowLeft, Loader2, Eye, EyeOff, UserPlus, ShieldAlert } from "lucide-react";
+import { ShieldCheck, Lock, User, ArrowLeft, Loader2, Eye, EyeOff, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useFirestore } from "@/firebase";
-import { collection, query, getDocs, limit, addDoc, serverTimestamp, where } from "firebase/firestore";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
+import { collection, query, getDocs, limit, where } from "firebase/firestore";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useAuth } from "@/firebase/provider";
 
@@ -36,39 +26,25 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showSetupModal, setShowSetupModal] = useState(false);
   
   const [isMounted, setIsMounted] = useState(false);
   const [initialCheckDone, setInitialCheckDone] = useState(false);
   const [isSystemFresh, setIsSystemFresh] = useState(false);
 
-  const [setupData, setSetupData] = useState({
-    fullName: "",
-    email: "",
-    password: ""
-  });
-
-  const [emailError, setEmailError] = useState("");
-
   useEffect(() => {
     setIsMounted(true);
     
-    // Quick local check to skip Firestore audit if already initialized
+    // Check if system is already initialized via localStorage to bypass audit
     const systemInitialized = localStorage.getItem("medtrack_system_initialized") === "true";
     
     if (systemInitialized) {
-      setIsSystemFresh(false);
       setInitialCheckDone(true);
-      // Even if initialized, check if already authenticated locally
-      if (localStorage.getItem("medtrack_admin_auth") === "true") {
-        router.push("/dashboard");
-      }
       return;
     }
 
+    // Perform background audit ONLY if system is not known to be initialized
     const checkAdminsExist = async () => {
       if (!db) return;
-
       try {
         const adminsRef = collection(db, "admins");
         const q = query(adminsRef, limit(1));
@@ -76,41 +52,39 @@ export default function LoginPage() {
         
         if (snap.empty) {
           setIsSystemFresh(true);
-          localStorage.removeItem("medtrack_admin_auth");
-          localStorage.removeItem("medtrack_auth_role");
-          localStorage.removeItem("medtrack_system_initialized");
         } else {
           localStorage.setItem("medtrack_system_initialized", "true");
-          setIsSystemFresh(false);
         }
       } catch (e) {
-        // Fail silently to maintain clean UI
+        console.error('[Auth] System audit failed:', e);
       } finally {
         setInitialCheckDone(true);
       }
     };
     
     checkAdminsExist();
-  }, [db, router]);
+  }, [db]);
 
   const validateEmail = (email: string) => {
-    if (email && !email.toLowerCase().endsWith(`@${ORG_DOMAIN}`)) {
-      setEmailError(`Requires official @${ORG_DOMAIN} address`);
-      return false;
-    }
-    setEmailError("");
-    return true;
+    return email.toLowerCase().endsWith(`@${ORG_DOMAIN}`);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
 
-    if (!validateEmail(username)) return;
+    if (!validateEmail(username)) {
+      toast({
+        title: "Invalid Domain",
+        description: `Only users with @${ORG_DOMAIN} emails can access the dashboard.`,
+        variant: "destructive",
+      });
+      return;
+    }
 
     setLoading(true);
 
-    // Provisional Bootstrap Login
+    // Provisional Bootstrap Login (Case Insensitive)
     if (isSystemFresh && username.toLowerCase() === `admin@${ORG_DOMAIN}` && password === "password123") {
       localStorage.setItem("medtrack_auth_role", "Super Admin");
       localStorage.setItem("medtrack_admin_auth", "true");
@@ -120,11 +94,8 @@ export default function LoginPage() {
 
     try {
       if (!auth) throw new Error("Auth service unavailable");
-
-      // Verify credentials via Firebase Auth
       await signInWithEmailAndPassword(auth, username, password);
 
-      // Verify Role/Status in Firestore
       const adminsRef = collection(db!, "admins");
       const emailQuery = query(adminsRef, where("email", "==", username));
       const querySnapshot = await getDocs(emailQuery);
@@ -134,7 +105,7 @@ export default function LoginPage() {
         if (adminData.status !== "Active") {
           toast({
             title: "Access Denied",
-            description: "Account inactive.",
+            description: "Your account is currently inactive.",
             variant: "destructive",
           });
         } else {
@@ -146,7 +117,7 @@ export default function LoginPage() {
       } else {
         toast({
           title: "Access Denied",
-          description: "Administrative profile not found.",
+          description: "Administrative profile not found in system.",
           variant: "destructive",
         });
       }
@@ -161,9 +132,7 @@ export default function LoginPage() {
     }
   };
 
-  if (!isMounted || !initialCheckDone) {
-    return null;
-  }
+  if (!isMounted) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-4">
@@ -177,7 +146,7 @@ export default function LoginPage() {
       
       <div className="w-full max-w-md">
         <div className="space-y-6">
-          {isSystemFresh && (
+          {initialCheckDone && isSystemFresh && (
             <Card className="border-amber-200 bg-amber-50 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2 text-amber-800">
@@ -187,7 +156,7 @@ export default function LoginPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-xs text-amber-700 leading-relaxed font-medium">
-                  No administrators detected. Use the provisional credentials below:
+                  No administrators detected. Use provisional credentials to initialize:
                 </p>
                 <div className="mt-3 p-3 bg-white rounded border border-amber-200 space-y-1">
                   <div className="flex justify-between text-[10px] font-bold">
@@ -217,28 +186,21 @@ export default function LoginPage() {
             <CardContent className="px-8 pb-8 space-y-6">
               <form onSubmit={handleLogin} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="username" className="text-xs font-bold uppercase text-slate-500">
-                    Work Email Address
-                  </Label>
+                  <Label htmlFor="username" className="text-xs font-bold uppercase text-slate-500">Work Email</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
                     <Input 
                       id="username" 
                       type="text"
                       placeholder={`Enter your @${ORG_DOMAIN} email`} 
-                      className={`pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20 bg-white ${emailError ? 'border-destructive ring-destructive/20' : ''}`}
+                      className={`pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20 bg-white ${username && !validateEmail(username) ? 'border-destructive ring-destructive/20' : ''}`}
                       value={username}
-                      onChange={(e) => {
-                        setUsername(e.target.value);
-                        validateEmail(e.target.value);
-                      }}
+                      onChange={(e) => setUsername(e.target.value)}
                       required
                     />
                   </div>
-                  {emailError && (
-                    <p className="text-[10px] font-bold text-destructive uppercase tracking-tight pl-1">
-                      {emailError}
-                    </p>
+                  {username && !validateEmail(username) && (
+                    <p className="text-[10px] font-bold text-destructive uppercase pl-1">Requires official @{ORG_DOMAIN} address</p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -248,34 +210,23 @@ export default function LoginPage() {
                     <Input 
                       id="password" 
                       type={showPassword ? "text" : "password"} 
-                      placeholder="••••••••" 
                       className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20 bg-white"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
                     />
-                    <button
-                      type="button"
-                      className="absolute right-3 top-3 text-slate-400 hover:text-primary transition-colors"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
+                    <button type="button" className="absolute right-3 top-3 text-slate-400" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full h-12 text-md font-bold bg-accent hover:bg-accent/90 text-primary shadow-lg transition-all mt-4" disabled={loading}>
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Access Dashboard"
-                  )}
+                <Button type="submit" className="w-full h-12 text-md font-bold bg-accent hover:bg-accent/90 text-primary shadow-lg mt-4" disabled={loading || !initialCheckDone}>
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Access Dashboard"}
                 </Button>
               </form>
             </CardContent>
             <CardFooter className="flex flex-col items-center bg-slate-100 border-t p-6">
-              <p className="text-[10px] text-slate-500 text-center leading-relaxed font-bold uppercase tracking-widest">
-                Authorized access only.
-              </p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Authorized access only.</p>
             </CardFooter>
           </Card>
         </div>
