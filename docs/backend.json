@@ -116,6 +116,44 @@
         "status",
         "addedAt"
       ]
+    },
+    "Employee": {
+      "title": "Verified Employee",
+      "description": "An employee authorized to use clinic services.",
+      "type": "object",
+      "properties": {
+        "fullName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "department": {
+          "type": "string"
+        },
+        "employeeId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Active",
+            "Inactive"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "fullName",
+        "email",
+        "department",
+        "status",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -131,6 +169,10 @@
     "/admins/{adminId}": {
       "schema": "AdminUser",
       "description": "Collection of authorized administrators for the clinic system."
+    },
+    "/employees/{employeeId}": {
+      "schema": "Employee",
+      "description": "Master list of verified company personnel."
     }
   }
 }

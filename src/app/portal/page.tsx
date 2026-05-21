@@ -206,7 +206,7 @@ export default function PublicPortalPage() {
                       required
                     />
                     {formData.email && !validateEmail(formData.email) && (
-                      <p className="text-[10px] font-bold text-destructive uppercase">Domain verification failed</p>
+                      <p className="text-[10px] font-bold text-destructive uppercase">Invalid Email Address</p>
                     )}
                   </div>
                 </div>

@@ -140,7 +140,7 @@ export default function LoginPage() {
                   </div>
                   {loginError && (
                     <p className="text-[10px] font-bold text-destructive uppercase pl-1 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" /> Incorrect password for this account
+                      <AlertCircle className="h-3 w-3" /> Incorrect Username or Password.
                     </p>
                   )}
                 </div>

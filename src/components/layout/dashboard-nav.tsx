@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -13,7 +12,8 @@ import {
   Lightbulb,
   PlusCircle,
   LogOut,
-  ShieldCheck
+  ShieldCheck,
+  Contact2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,11 @@ const navItems = [
     title: "Medicine Logs",
     url: "/dashboard/records",
     icon: ClipboardList,
+  },
+  {
+    title: "Employee Master List",
+    url: "/dashboard/employees",
+    icon: Contact2,
   },
   {
     title: "AI Insights",
