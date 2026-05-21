@@ -51,7 +51,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       return;
     }
 
-    // Only show setup if the system isn't initialized and the current session is Super Admin (dummy)
     if (!systemInitialized && userRole === "Super Admin") {
       setShowSetup(true);
     }
@@ -59,7 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (pathname === "/dashboard/users" && userRole !== "Super Admin") {
       toast({
         title: "Access Denied",
-        description: "Requires Super Admin permissions.",
+        description: "Administrative clearance required.",
         variant: "destructive",
       });
       router.push("/dashboard");
@@ -73,40 +72,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     e.preventDefault();
     if (!setupData.email.toLowerCase().endsWith(`@${ORG_DOMAIN}`)) {
       toast({
-        title: "Invalid Email",
-        description: `Only @${ORG_DOMAIN} addresses allowed.`,
+        title: "Invalid Domain",
+        description: `Only @${ORG_DOMAIN} addresses are authorized.`,
         variant: "destructive",
       });
       return;
     }
 
-    // Optimistic UI: Close immediately for speed
+    // Optimistic UI: Close immediately to allow dashboard access
     setShowSetup(false);
     localStorage.setItem("medtrack_system_initialized", "true");
     
     toast({
-      title: "Initializing System",
-      description: "Establishing Super Admin profile in background...",
+      title: "Registering Profile",
+      description: "Finalizing facility initialization in background...",
     });
 
     const adminPayload = {
       fullName: setupData.fullName,
       email: setupData.email,
-      password: setupData.password, // Stored for clinic reference
       role: "Super Admin",
       status: "Active",
       addedAt: serverTimestamp(),
     };
 
+    // Background registration
     try {
-      // 1. Create Auth account
       if (auth) {
-        createUserWithEmailAndPassword(auth, setupData.email, setupData.password).catch(e => {
-          console.error('[Setup] Auth creation error:', e);
-        });
+        createUserWithEmailAndPassword(auth, setupData.email, setupData.password).catch(() => {});
       }
-      
-      // 2. Save directly to User Management (admins collection)
       if (db) {
         addDoc(collection(db, "admins"), adminPayload).catch(async (error) => {
           const permissionError = new FirestorePermissionError({
@@ -117,8 +111,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           errorEmitter.emit("permission-error", permissionError);
         });
       }
-    } catch (error: any) {
-      console.error('[Setup] Background processing error:', error);
+    } catch (error) {
+      // Background failure
     }
   };
 
@@ -134,7 +128,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-white/80 px-6 backdrop-blur-md">
             <SidebarTrigger className="-ml-1 text-slate-600" />
             <div className="h-4 w-[1px] bg-slate-200" />
-            <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Clinical Administration System</h2>
+            <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Clinical Administrative Interface</h2>
           </header>
           <main className="flex-1 overflow-auto p-6 lg:p-10 max-w-[1600px] mx-auto w-full">
             {children}
@@ -147,7 +141,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold font-headline text-accent">Clinical Initialization</DialogTitle>
                 <DialogDescription className="font-medium text-slate-500">
-                  Bootstrap session active. Please register the permanent Super Admin to secure the facility system.
+                  First-time setup active. Please register the permanent Super Admin for Callbôx Davao.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-6">
@@ -162,15 +156,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="setupEmail">Organization Email</Label>
+                  <Label htmlFor="setupEmail">Work Email</Label>
                   <Input 
                     id="setupEmail" 
-                    placeholder={`admin@${ORG_DOMAIN}`}
+                    placeholder={`username@${ORG_DOMAIN}`}
                     value={setupData.email}
                     onChange={(e) => setSetupData({...setupData, email: e.target.value})}
                     required
                   />
-                  {!setupData.email.toLowerCase().endsWith(`@${ORG_DOMAIN}`) && setupData.email && (
+                  {setupData.email && !setupData.email.toLowerCase().endsWith(`@${ORG_DOMAIN}`) && (
                     <p className="text-[10px] font-bold text-destructive uppercase">Requires official @{ORG_DOMAIN} address</p>
                   )}
                 </div>
@@ -179,7 +173,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Input 
                     id="setupPass" 
                     type="password"
-                    placeholder="Min. 8 characters"
+                    placeholder="Minimum 8 characters"
                     value={setupData.password}
                     onChange={(e) => setSetupData({...setupData, password: e.target.value})}
                     required
@@ -188,7 +182,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
               <DialogFooter>
                 <Button type="submit" className="w-full h-12 bg-accent hover:bg-accent/90 text-primary font-bold uppercase tracking-wider shadow-lg">
-                  Complete Clinical Initialization
+                  Initialize Facility System
                 </Button>
               </DialogFooter>
             </form>

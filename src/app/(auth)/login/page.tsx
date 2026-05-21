@@ -34,17 +34,18 @@ export default function LoginPage() {
   useEffect(() => {
     setIsMounted(true);
     
-    // Check if system is already initialized via localStorage to bypass audit
     const systemInitialized = localStorage.getItem("medtrack_system_initialized") === "true";
-    
     if (systemInitialized) {
       setInitialCheckDone(true);
       return;
     }
 
-    // Perform background audit ONLY if system is not known to be initialized
+    // Silent background audit
     const checkAdminsExist = async () => {
-      if (!db) return;
+      if (!db) {
+        setInitialCheckDone(true);
+        return;
+      }
       try {
         const adminsRef = collection(db, "admins");
         const q = query(adminsRef, limit(1));
@@ -56,7 +57,7 @@ export default function LoginPage() {
           localStorage.setItem("medtrack_system_initialized", "true");
         }
       } catch (e) {
-        console.error('[Auth] System audit failed:', e);
+        // Fail silently to user
       } finally {
         setInitialCheckDone(true);
       }
@@ -75,8 +76,8 @@ export default function LoginPage() {
 
     if (!validateEmail(username)) {
       toast({
-        title: "Invalid Domain",
-        description: `Only users with @${ORG_DOMAIN} emails can access the dashboard.`,
+        title: "Domain Restricted",
+        description: `Access is limited to verified @${ORG_DOMAIN} accounts.`,
         variant: "destructive",
       });
       return;
@@ -84,7 +85,7 @@ export default function LoginPage() {
 
     setLoading(true);
 
-    // Provisional Bootstrap Login (Case Insensitive)
+    // Provisional Bootstrap Access
     if (isSystemFresh && username.toLowerCase() === `admin@${ORG_DOMAIN}` && password === "password123") {
       localStorage.setItem("medtrack_auth_role", "Super Admin");
       localStorage.setItem("medtrack_admin_auth", "true");
@@ -93,7 +94,7 @@ export default function LoginPage() {
     }
 
     try {
-      if (!auth) throw new Error("Auth service unavailable");
+      if (!auth) throw new Error("Authentication service is offline.");
       await signInWithEmailAndPassword(auth, username, password);
 
       const adminsRef = collection(db!, "admins");
@@ -104,8 +105,8 @@ export default function LoginPage() {
         const adminData = querySnapshot.docs[0].data();
         if (adminData.status !== "Active") {
           toast({
-            title: "Access Denied",
-            description: "Your account is currently inactive.",
+            title: "Access Revoked",
+            description: "Your administrative account is currently inactive.",
             variant: "destructive",
           });
         } else {
@@ -116,15 +117,15 @@ export default function LoginPage() {
         }
       } else {
         toast({
-          title: "Access Denied",
-          description: "Administrative profile not found in system.",
+          title: "Profile Missing",
+          description: "No administrative profile linked to this address.",
           variant: "destructive",
         });
       }
     } catch (error: any) {
       toast({
-        title: "Authentication Failed",
-        description: error.message || "Incorrect email or password.",
+        title: "Login Failed",
+        description: error.code === 'auth/invalid-credential' ? "Incorrect password. Please try again." : error.message,
         variant: "destructive",
       });
     } finally {
@@ -147,16 +148,16 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="space-y-6">
           {initialCheckDone && isSystemFresh && (
-            <Card className="border-amber-200 bg-amber-50 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+            <Card className="border-amber-200 bg-amber-50 shadow-sm">
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2 text-amber-800">
                   <ShieldAlert className="h-4 w-4" />
-                  <CardTitle className="text-sm font-bold uppercase tracking-wide">System Bootstrap Active</CardTitle>
+                  <CardTitle className="text-sm font-bold uppercase tracking-wide">Facility Bootstrap Mode</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-xs text-amber-700 leading-relaxed font-medium">
-                  No administrators detected. Use provisional credentials to initialize:
+                  System uninitialized. Use bootstrap credentials to register the first admin:
                 </p>
                 <div className="mt-3 p-3 bg-white rounded border border-amber-200 space-y-1">
                   <div className="flex justify-between text-[10px] font-bold">
@@ -180,8 +181,8 @@ export default function LoginPage() {
                   <ShieldCheck className="h-8 w-8 text-primary" />
                 </div>
               </div>
-              <CardTitle className="text-3xl font-bold font-headline text-accent tracking-tight uppercase">Admin Portal</CardTitle>
-              <CardDescription className="text-slate-500 font-medium">Secure Clinical Management Access</CardDescription>
+              <CardTitle className="text-3xl font-bold font-headline text-accent tracking-tight uppercase">Admin Access</CardTitle>
+              <CardDescription className="text-slate-500 font-medium tracking-wide uppercase text-[10px]">Secure Clinical Gateway</CardDescription>
             </CardHeader>
             <CardContent className="px-8 pb-8 space-y-6">
               <form onSubmit={handleLogin} className="space-y-5">
@@ -192,7 +193,7 @@ export default function LoginPage() {
                     <Input 
                       id="username" 
                       type="text"
-                      placeholder={`Enter your @${ORG_DOMAIN} email`} 
+                      placeholder={`username@${ORG_DOMAIN}`} 
                       className={`pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary/20 bg-white ${username && !validateEmail(username) ? 'border-destructive ring-destructive/20' : ''}`}
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
@@ -215,7 +216,7 @@ export default function LoginPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                     />
-                    <button type="button" className="absolute right-3 top-3 text-slate-400" onClick={() => setShowPassword(!showPassword)}>
+                    <button type="button" className="absolute right-3 top-3 text-slate-400 hover:text-primary transition-colors" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
@@ -226,7 +227,7 @@ export default function LoginPage() {
               </form>
             </CardContent>
             <CardFooter className="flex flex-col items-center bg-slate-100 border-t p-6">
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Authorized access only.</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">Authorized Personnel Only</p>
             </CardFooter>
           </Card>
         </div>

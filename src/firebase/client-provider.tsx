@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { initializeFirebase } from './index';
 import { FirebaseProvider } from './provider';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
@@ -14,26 +14,29 @@ export const FirebaseClientProvider: React.FC<{ children: React.ReactNode }> = (
   } | null>(null);
 
   useEffect(() => {
-    // Initialize Firebase ONLY on the client to avoid SSR invalid-api-key errors
+    // Initialize Firebase ONLY on the client
     try {
       const results = initializeFirebase();
-      setInstances(results);
+      if (results.firebaseApp) {
+        setInstances(results);
+      } else {
+        console.warn('[Firebase] Application running without active Firebase connection.');
+      }
     } catch (e) {
       console.error('[Firebase] Failed to initialize instances:', e);
     }
   }, []);
 
-  if (!instances) {
-    // Return children to allow static parts of the page to render, 
-    // but hooks will wait for context once instances are set.
-    return <>{children}</>;
-  }
+  // Use a placeholder provider if instances aren't ready to prevent hook crashes
+  const contextValue = useMemo(() => {
+    return instances || { firebaseApp: null, firestore: null, auth: null };
+  }, [instances]);
 
   return (
     <FirebaseProvider 
-      firebaseApp={instances.firebaseApp} 
-      firestore={instances.firestore} 
-      auth={instances.auth}
+      firebaseApp={contextValue.firebaseApp} 
+      firestore={contextValue.firestore} 
+      auth={contextValue.auth}
     >
       <FirebaseErrorListener />
       {children}

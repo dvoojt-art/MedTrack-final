@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,10 +37,6 @@ export default function PublicPortalPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  useEffect(() => {
-    console.log('[Portal] Entry portal mounted.');
-  }, []);
-
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -71,43 +67,23 @@ export default function PublicPortalPage() {
     setMedicines(newMedicines);
   };
 
+  const validateEmail = (email: string) => {
+    return email.toLowerCase().endsWith(`@${ORG_DOMAIN}`);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[Portal] Initiating issuance submission...');
     
-    const isMedicinesValid = medicines.every(m => m.name.trim() !== "" && m.dosage.trim() !== "" && m.quantity > 0);
-    const isFormValid = 
-      formData.name.trim() !== "" && 
-      formData.email.trim() !== "" && 
-      formData.age.trim() !== "" && 
-      formData.department !== "" && 
-      formData.chiefComplaints.trim() !== "";
-
-    if (!isFormValid || !isMedicinesValid) {
-      console.warn('[Portal] Submission blocked: Incomplete form data.');
+    if (!validateEmail(formData.email)) {
       toast({
-        title: "Incomplete Form",
-        description: "Please fill in all employee and medicine details before recording.",
+        title: "Domain Verification Failed",
+        description: `Only users with @${ORG_DOMAIN} emails are authorized for record entry.`,
         variant: "destructive"
       });
       return;
     }
 
-    if (!formData.email.toLowerCase().endsWith(`@${ORG_DOMAIN}`)) {
-      console.warn('[Portal] Submission blocked: Invalid email domain:', formData.email);
-      toast({
-        title: "Invalid Email",
-        description: `Only ${ORG_DOMAIN} emails are accepted for this organization.`,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!db) {
-      console.error('[Portal] Submission error: Firestore instance not available.');
-      return;
-    }
-    
+    if (!db) return;
     setIsSubmitting(true);
 
     const now = new Date();
@@ -123,14 +99,8 @@ export default function PublicPortalPage() {
       createdAt: serverTimestamp(),
     };
 
-    console.log('[Portal] Saving record to Firestore...');
-    
     addDoc(collection(db, "issuances"), record)
-      .then((docRef) => {
-        console.log('[Portal] Record successfully saved. ID:', docRef.id);
-      })
       .catch(async (error) => {
-        console.error('[Portal] Firestore write error:', error);
         const permissionError = new FirestorePermissionError({
           path: "issuances",
           operation: "create",
@@ -147,10 +117,10 @@ export default function PublicPortalPage() {
       setIsSuccess(false);
       setShowReceipt(true);
       toast({
-        title: "Record Saved",
-        description: "Medicine distribution successfully logged in the system.",
+        title: "Log Finalized",
+        description: "Medicine issuance record has been successfully captured.",
       });
-    }, 700);
+    }, 800);
   };
 
   if (showReceipt && submittedRecord) {
@@ -159,7 +129,6 @@ export default function PublicPortalPage() {
         <ReceiptView 
           record={submittedRecord} 
           onClose={() => {
-            console.log('[Portal] Receipt closed. Resetting form.');
             setShowReceipt(false);
             setFormData({
               name: "",
@@ -183,7 +152,7 @@ export default function PublicPortalPage() {
           <div className="bg-white p-8 rounded-full shadow-2xl border border-slate-200 animate-in zoom-in-50 duration-500">
             <CheckCircle2 className="h-20 w-20 text-accent animate-bounce" />
           </div>
-          <p className="mt-4 text-xl font-bold text-slate-800">Record Logged!</p>
+          <p className="mt-4 text-xl font-bold text-slate-800">Recording Data...</p>
         </div>
       )}
 
@@ -192,26 +161,26 @@ export default function PublicPortalPage() {
           <div className="h-8 w-8 bg-accent rounded-lg flex items-center justify-center text-primary">
             <Stethoscope className="h-5 w-5" />
           </div>
-          <h1 className="text-xl font-bold text-slate-700 font-headline">Clinic Entry Portal</h1>
+          <h1 className="text-xl font-bold text-slate-700 font-headline uppercase tracking-tight">Clinic Entry Portal</h1>
         </div>
         <Button variant="ghost" size="sm" asChild className="text-accent hover:text-primary font-bold">
           <Link href="/" className="gap-2">
-            <Home className="h-4 w-4" /> Exit to Home
+            <Home className="h-4 w-4" /> System Home
           </Link>
         </Button>
       </header>
 
       <main className="max-w-4xl mx-auto p-6 md:p-10 w-full flex-1">
         <div className="mb-8 animate-in fade-in slide-in-from-left-4 duration-500">
-          <h2 className="text-3xl font-bold font-headline tracking-tight text-slate-800">New Medicine Distribution</h2>
-          <p className="text-slate-500 mt-1 text-lg">Enter employee and medicine details for the record.</p>
+          <h2 className="text-3xl font-bold font-headline tracking-tight text-slate-800">Employee Issuance Log</h2>
+          <p className="text-slate-500 mt-1 font-medium">Verified @{ORG_DOMAIN} domain required.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 gap-6">
             <Card className="border-none shadow-sm overflow-hidden bg-white">
               <CardHeader className="bg-slate-50 border-b">
-                <CardTitle className="text-lg font-headline text-slate-700">Personal Details</CardTitle>
+                <CardTitle className="text-lg font-headline text-slate-700">Identification</CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -219,7 +188,7 @@ export default function PublicPortalPage() {
                     <Label htmlFor="name" className="text-slate-600">Full Name</Label>
                     <Input 
                       id="name" 
-                      placeholder="e.g. Juan Dela Cruz" 
+                      placeholder="Juan Dela Cruz" 
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
                       required
@@ -230,11 +199,15 @@ export default function PublicPortalPage() {
                     <Input 
                       id="email" 
                       type="email"
-                      placeholder={`employee@${ORG_DOMAIN}`} 
+                      placeholder={`username@${ORG_DOMAIN}`} 
+                      className={formData.email && !validateEmail(formData.email) ? "border-destructive ring-destructive/20" : ""}
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       required
                     />
+                    {formData.email && !validateEmail(formData.email) && (
+                      <p className="text-[10px] font-bold text-destructive uppercase">Domain verification failed</p>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -268,7 +241,7 @@ export default function PublicPortalPage() {
 
             <Card className="border-none shadow-sm overflow-hidden bg-white">
               <CardHeader className="bg-slate-50 border-b">
-                <CardTitle className="text-lg font-headline text-slate-700">Employment Information</CardTitle>
+                <CardTitle className="text-lg font-headline text-slate-700">Clinical Data</CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -276,7 +249,7 @@ export default function PublicPortalPage() {
                     <Label htmlFor="department" className="text-slate-600">Department</Label>
                     <Select value={formData.department} onValueChange={(val) => setFormData({...formData, department: val})}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select Department" />
+                        <SelectValue placeholder="Select Dept" />
                       </SelectTrigger>
                       <SelectContent>
                         {DEPARTMENTS.map((dept) => (
@@ -287,10 +260,10 @@ export default function PublicPortalPage() {
                   </div>
                 </div>
                 <div className="pt-2">
-                  <Label htmlFor="complaints" className="text-slate-600">Chief Complaints / Symptoms</Label>
+                  <Label htmlFor="complaints" className="text-slate-600">Chief Complaints</Label>
                   <Textarea 
                     id="complaints" 
-                    placeholder="Briefly describe what the employee is feeling..." 
+                    placeholder="Describe symptoms..." 
                     className="min-h-[100px] mt-2 border-slate-200"
                     value={formData.chiefComplaints}
                     onChange={(e) => setFormData({...formData, chiefComplaints: e.target.value})}
@@ -302,16 +275,16 @@ export default function PublicPortalPage() {
 
             <Card className="border-none shadow-sm overflow-hidden bg-white">
               <CardHeader className="bg-slate-50 border-b flex flex-row items-center justify-between">
-                <CardTitle className="text-lg font-headline text-slate-700">Medicine Issued</CardTitle>
+                <CardTitle className="text-lg font-headline text-slate-700">Medicine Distribution</CardTitle>
                 <Button type="button" variant="outline" size="sm" onClick={addMedicine} className="gap-2 border-slate-200">
-                  <Plus className="h-4 w-4" /> Add Item
+                  <Plus className="h-4 w-4" /> Add Line
                 </Button>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
                 {medicines.map((med, index) => (
-                  <div key={index} className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-slate-50 relative border border-slate-100 animate-in fade-in duration-300">
+                  <div key={index} className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-slate-50 relative border border-slate-100">
                     <div className="sm:col-span-2 space-y-2">
-                      <Label className="text-slate-500">Medicine Name</Label>
+                      <Label className="text-slate-500">Medicine</Label>
                       <Input 
                         placeholder="e.g. Paracetamol" 
                         value={med.name}
@@ -321,7 +294,7 @@ export default function PublicPortalPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-slate-500">Quantity</Label>
+                      <Label className="text-slate-500">Qty</Label>
                       <Input 
                         type="number" 
                         value={med.quantity}
@@ -361,8 +334,8 @@ export default function PublicPortalPage() {
           </div>
 
           <div className="flex justify-end pt-4">
-            <Button type="submit" size="lg" className="bg-accent hover:bg-accent/90 text-primary gap-2 min-w-[240px] shadow-lg shadow-slate-200" disabled={isSubmitting || isSuccess}>
-              <Send className="h-4 w-4" /> {isSubmitting ? "Recording..." : "Record & Print Receipt"}
+            <Button type="submit" size="lg" className="bg-accent hover:bg-accent/90 text-primary gap-2 min-w-[240px] shadow-lg" disabled={isSubmitting || isSuccess}>
+              <Send className="h-4 w-4" /> {isSubmitting ? "Capturing..." : "Record & Print Receipt"}
             </Button>
           </div>
         </form>

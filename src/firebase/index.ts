@@ -11,6 +11,12 @@ export function initializeFirebase() {
     return { firebaseApp: null, firestore: null, auth: null };
   }
 
+  // Defensive check for valid config to prevent auth/invalid-api-key crash
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'undefined') {
+    console.warn('[Firebase] Warning: API Key is missing or invalid. Check environment variables.');
+    return { firebaseApp: null, firestore: null, auth: null };
+  }
+
   try {
     const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     const firestore = getFirestore(firebaseApp);
@@ -18,7 +24,7 @@ export function initializeFirebase() {
     return { firebaseApp, firestore, auth };
   } catch (error) {
     console.error('[Firebase] Initialization error:', error);
-    throw error;
+    return { firebaseApp: null, firestore: null, auth: null };
   }
 }
 

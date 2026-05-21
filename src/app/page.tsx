@@ -9,7 +9,6 @@ import Link from "next/link";
 export default function WelcomePage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Hero Section */}
       <main className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-12">
         <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 text-accent text-xs font-black uppercase tracking-wider mb-4 border border-primary/30">
@@ -31,9 +30,9 @@ export default function WelcomePage() {
                 <Stethoscope className="h-10 w-10" />
               </div>
               <div className="space-y-2">
-                <h3 className="text-2xl font-black font-headline uppercase tracking-tight text-accent">Clinic Entry</h3>
+                <h3 className="text-2xl font-black font-headline uppercase tracking-tight text-accent">Clinical Entry</h3>
                 <p className="text-slate-500 text-sm font-medium">
-                  Public interface for clinic staff to log employee medicine issuance and generate receipts.
+                  Personnel portal for medicine issuance logs and digital receipt generation.
                 </p>
               </div>
               <Button asChild className="w-full bg-slate-600 hover:bg-slate-700 text-primary font-bold h-12 mt-4 gap-2">
@@ -53,7 +52,7 @@ export default function WelcomePage() {
               <div className="space-y-2">
                 <h3 className="text-2xl font-black font-headline uppercase tracking-tight text-accent">Admin Dashboard</h3>
                 <p className="text-slate-500 text-sm font-medium">
-                  Secure access for administrators to review logs, manage users, and view AI insights.
+                  Authorized access for reviewing clinical trends, records, and AI insights.
                 </p>
               </div>
               <Button asChild className="w-full bg-primary hover:bg-primary/90 text-accent font-bold h-12 mt-4 gap-2">
