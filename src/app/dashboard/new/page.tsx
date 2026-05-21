@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,13 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, ArrowLeft, Send, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Send, CheckCircle2, UserCheck, UserX } from "lucide-react";
 import { ReceiptView } from "@/components/records/receipt-view";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore } from "@/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
+import { useFirestore, useCollection } from "@/firebase";
+import { collection, addDoc, serverTimestamp, query, where, limit } from "firebase/firestore";
 
 const DEPARTMENTS = [
   "North America (NAM)",
@@ -37,6 +35,7 @@ export default function NewRecordPage() {
   const [submittedRecord, setSubmittedRecord] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isVerified, setIsVerified] = useState<boolean | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -50,6 +49,47 @@ export default function NewRecordPage() {
   const [medicines, setMedicines] = useState([
     { name: "", quantity: 1, dosage: "" }
   ]);
+
+  // Personnel Verification logic
+  useEffect(() => {
+    if (!db || formData.email.length < 5 || !formData.email.endsWith(`@${ORG_DOMAIN}`)) {
+      setIsVerified(null);
+      return;
+    }
+
+    const checkEmployee = async () => {
+      const q = query(
+        collection(db, "employees"),
+        where("email", "==", formData.email.toLowerCase()),
+        limit(1)
+      );
+      
+      const timeoutId = setTimeout(() => {
+        // Simple debounced search
+      }, 500);
+
+      try {
+        const { getDocs } = await import("firebase/firestore");
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          const emp = snapshot.docs[0].data();
+          setFormData(prev => ({
+            ...prev,
+            name: emp.fullName,
+            department: emp.department
+          }));
+          setIsVerified(true);
+        } else {
+          setIsVerified(false);
+        }
+      } catch (e) {
+        console.error("Verification error", e);
+      }
+      return () => clearTimeout(timeoutId);
+    };
+
+    checkEmployee();
+  }, [formData.email, db]);
 
   const addMedicine = () => {
     setMedicines([...medicines, { name: "", quantity: 1, dosage: "" }]);
@@ -68,36 +108,20 @@ export default function NewRecordPage() {
     setMedicines(newMedicines);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const isMedicinesValid = medicines.every(m => m.name.trim() !== "" && m.dosage.trim() !== "" && m.quantity > 0);
-    const isFormValid = 
-      formData.name.trim() !== "" && 
-      formData.email.trim() !== "" && 
-      formData.age.trim() !== "" && 
-      formData.department !== "" && 
-      formData.chiefComplaints.trim() !== "";
-
-    if (!isFormValid || !isMedicinesValid) {
-      toast({
-        title: "Missing Information",
-        description: "All fields are required. Please fill in all employee and medicine details.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!formData.email.toLowerCase().endsWith(`@${ORG_DOMAIN}`)) {
-      toast({
-        title: "Invalid Email",
-        description: `Only ${ORG_DOMAIN} emails are accepted.`,
-        variant: "destructive"
-      });
-      return;
-    }
-
     if (!db) return;
+
+    if (!isVerified) {
+      toast({
+        title: "Personnel Not Found",
+        description: "The patient is not registered in the Master List. Please verify their record first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     const now = new Date();
@@ -113,28 +137,28 @@ export default function NewRecordPage() {
       createdAt: serverTimestamp(),
     };
 
-    addDoc(collection(db, "issuances"), record)
-      .catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
-          path: "issuances",
-          operation: "create",
-          requestResourceData: record,
+    try {
+      await addDoc(collection(db, "issuances"), record);
+      setSubmittedRecord(record);
+      setIsSuccess(true);
+      setIsSubmitting(false);
+
+      setTimeout(() => {
+        setIsSuccess(false);
+        setShowReceipt(true);
+        toast({
+          title: "Log Success",
+          description: "Clinical record finalized.",
         });
-        errorEmitter.emit("permission-error", permissionError);
-      });
-
-    setSubmittedRecord(record);
-    setIsSuccess(true);
-    setIsSubmitting(false);
-
-    setTimeout(() => {
-      setIsSuccess(false);
-      setShowReceipt(true);
+      }, 1200);
+    } catch (error) {
       toast({
-        title: "Success",
-        description: "Medicine issuance record has been successfully logged.",
+        title: "Error",
+        description: "Failed to save clinical record.",
+        variant: "destructive"
       });
-    }, 1200);
+      setIsSubmitting(false);
+    }
   };
 
   if (showReceipt && submittedRecord) {
@@ -155,7 +179,7 @@ export default function NewRecordPage() {
           <div className="bg-white p-8 rounded-full shadow-2xl border border-accent/20 animate-in zoom-in-50 duration-500">
             <CheckCircle2 className="h-16 w-16 text-accent animate-bounce" />
           </div>
-          <p className="mt-4 text-lg font-bold text-primary">Record Logged!</p>
+          <p className="mt-4 text-lg font-bold text-primary">Log Finalized</p>
         </div>
       )}
 
@@ -164,47 +188,68 @@ export default function NewRecordPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold font-headline tracking-tight text-accent">New Issuance Log</h1>
-          <p className="text-muted-foreground mt-1">Record a new medicine distribution for an employee.</p>
+          <h1 className="text-3xl font-bold font-headline tracking-tight text-accent uppercase tracking-tighter">Clinical Manual Log</h1>
+          <p className="text-muted-foreground mt-1 font-medium">Capture medicine issuance for verified personnel.</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 gap-6">
-          <Card className="border-none shadow-sm">
-            <CardHeader className="bg-white border-b">
-              <CardTitle className="text-lg font-headline text-primary">Employee Information</CardTitle>
+          <Card className="border-none shadow-sm overflow-hidden">
+            <CardHeader className="bg-slate-50 border-b">
+              <CardTitle className="text-sm font-black uppercase text-accent tracking-widest">Personnel Identification</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input 
-                      id="name" 
-                      placeholder="Enter full name" 
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      required
-                    />
+                    <Label className="text-[10px] font-black uppercase text-slate-400">Work Email (@{ORG_DOMAIN})</Label>
+                    <div className="relative">
+                      <Input 
+                        type="email"
+                        placeholder={`employee@${ORG_DOMAIN}`} 
+                        value={formData.email}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        className={isVerified === false ? "border-destructive ring-destructive/20" : ""}
+                        required
+                      />
+                      <div className="absolute right-3 top-3">
+                        {isVerified === true && <UserCheck className="h-4 w-4 text-emerald-500" />}
+                        {isVerified === false && <UserX className="h-4 w-4 text-destructive" />}
+                      </div>
+                    </div>
+                    {isVerified === false && (
+                      <p className="text-[10px] font-bold text-destructive uppercase tracking-widest">Not found in clinical directory</p>
+                    )}
+                    {isVerified === true && (
+                      <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" /> Personnel Verified
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Work Email</Label>
+                    <Label className="text-[10px] font-black uppercase text-slate-400">Full Name</Label>
                     <Input 
-                      id="email" 
-                      type="email"
-                      placeholder={`employee@${ORG_DOMAIN}`} 
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      required
+                      placeholder="Identified automatically" 
+                      value={formData.name}
+                      readOnly
+                      className="bg-slate-50 cursor-not-allowed font-bold"
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="age">Age</Label>
+                    <Label className="text-[10px] font-black uppercase text-slate-400">Department</Label>
                     <Input 
-                      id="age" 
+                      placeholder="Department detected" 
+                      value={formData.department}
+                      readOnly
+                      className="bg-slate-50 cursor-not-allowed font-bold"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-slate-400">Age</Label>
+                    <Input 
                       type="number" 
                       placeholder="Years" 
                       value={formData.age}
@@ -212,47 +257,14 @@ export default function NewRecordPage() {
                       required
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="gender">Gender</Label>
-                    <Select value={formData.gender} onValueChange={(val) => setFormData({...formData, gender: val})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Gender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Male">Male</SelectItem>
-                        <SelectItem value="Female">Female</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t space-y-4">
-                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Employment Details</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <Select value={formData.department} onValueChange={(val) => setFormData({...formData, department: val})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {DEPARTMENTS.map((dept) => (
-                          <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
               </div>
 
               <div className="pt-4 border-t space-y-2">
-                <Label htmlFor="complaints">Chief Complaints</Label>
+                <Label className="text-[10px] font-black uppercase text-slate-400">Chief Complaints</Label>
                 <Textarea 
-                  id="complaints" 
-                  placeholder="Describe symptoms briefly..." 
-                  className="min-h-[100px]"
+                  placeholder="Describe patient symptoms..." 
+                  className="min-h-[100px] border-slate-200"
                   value={formData.chiefComplaints}
                   onChange={(e) => setFormData({...formData, chiefComplaints: e.target.value})}
                   required
@@ -261,43 +273,46 @@ export default function NewRecordPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm">
-            <CardHeader className="bg-white border-b flex flex-row items-center justify-between">
-              <CardTitle className="text-lg font-headline text-primary">Medicine Taken</CardTitle>
-              <Button type="button" variant="outline" size="sm" onClick={addMedicine} className="gap-2">
-                <Plus className="h-4 w-4" /> Add Item
+          <Card className="border-none shadow-sm overflow-hidden">
+            <CardHeader className="bg-slate-50 border-b flex flex-row items-center justify-between">
+              <CardTitle className="text-sm font-black uppercase text-accent tracking-widest">Clinical Distribution</CardTitle>
+              <Button type="button" variant="outline" size="sm" onClick={addMedicine} className="gap-2 border-slate-200 text-[10px] font-bold uppercase">
+                <Plus className="h-3 w-3" /> Add Item
               </Button>
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-4">
                 {medicines.map((med, index) => (
-                  <div key={index} className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-slate-50 relative animate-in fade-in duration-300">
+                  <div key={index} className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-slate-50 relative animate-in fade-in duration-300 border border-slate-100">
                     <div className="sm:col-span-2 space-y-2">
-                      <Label>Medicine Name</Label>
+                      <Label className="text-[10px] font-black uppercase text-slate-400">Medicine</Label>
                       <Input 
                         placeholder="e.g. Paracetamol" 
                         value={med.name}
                         onChange={(e) => updateMedicine(index, 'name', e.target.value)}
+                        className="bg-white"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Quantity</Label>
+                      <Label className="text-[10px] font-black uppercase text-slate-400">Qty</Label>
                       <Input 
                         type="number" 
                         value={med.quantity}
                         min={1}
                         onChange={(e) => updateMedicine(index, 'quantity', parseInt(e.target.value))}
+                        className="bg-white"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Dosage</Label>
+                      <Label className="text-[10px] font-black uppercase text-slate-400">Dosage</Label>
                       <div className="flex gap-2">
                         <Input 
-                          placeholder="e.g. 500mg" 
+                          placeholder="500mg" 
                           value={med.dosage}
                           onChange={(e) => updateMedicine(index, 'dosage', e.target.value)}
+                          className="bg-white"
                           required
                         />
                         {medicines.length > 1 && (
@@ -305,7 +320,7 @@ export default function NewRecordPage() {
                             type="button" 
                             variant="ghost" 
                             size="icon" 
-                            className="text-destructive shrink-0"
+                            className="text-slate-300 hover:text-destructive shrink-0"
                             onClick={() => removeMedicine(index)}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -321,8 +336,8 @@ export default function NewRecordPage() {
         </div>
 
         <div className="flex justify-end mt-8">
-          <Button type="submit" size="lg" className="bg-primary gap-2 min-w-[200px]" disabled={isSubmitting || isSuccess}>
-            <Send className="h-4 w-4" /> {isSubmitting ? "Recording..." : "Submit & Generate Receipt"}
+          <Button type="submit" size="lg" className="bg-accent text-primary font-black uppercase tracking-widest min-w-[240px] shadow-lg shadow-accent/20" disabled={isSubmitting || isSuccess}>
+            <Send className="h-4 w-4" /> {isSubmitting ? "Finalizing..." : "Submit Log & Print Receipt"}
           </Button>
         </div>
       </form>
