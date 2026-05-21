@@ -267,7 +267,8 @@ export default function EmployeeMasterListPage() {
         const line = lines[i].trim();
         if (!line) continue;
 
-        const [name, email, dept, id] = line.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+        const parts = line.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+        const [name, email, dept, id] = parts;
         
         if (name && email && validateEmail(email)) {
           const newDocRef = doc(collection(db, "employees"));
