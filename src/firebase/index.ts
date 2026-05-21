@@ -12,7 +12,7 @@ export function initializeFirebase() {
   }
 
   // Defensive check for valid config to prevent auth/invalid-api-key crash
-  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'undefined') {
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'undefined' || firebaseConfig.apiKey.includes('process.env')) {
     console.warn('[Firebase] Warning: API Key is missing or invalid. Check environment variables.');
     return { firebaseApp: null, firestore: null, auth: null };
   }

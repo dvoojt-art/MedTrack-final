@@ -7,70 +7,33 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Lock, User, ArrowLeft, Loader2, Eye, EyeOff, ShieldAlert } from "lucide-react";
+import { ShieldCheck, Lock, User, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { useFirestore } from "@/firebase";
-import { collection, query, getDocs, limit, where } from "firebase/firestore";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { useAuth } from "@/firebase/provider";
 
 const ORG_DOMAIN = "callboxinc.com";
+const MASTER_USER = "admin@callboxinc.com";
+const MASTER_PASS = "password123";
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const db = useFirestore();
-  const auth = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
   const [isMounted, setIsMounted] = useState(false);
-  const [initialCheckDone, setInitialCheckDone] = useState(false);
-  const [isSystemFresh, setIsSystemFresh] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-    
-    const systemInitialized = localStorage.getItem("medtrack_system_initialized") === "true";
-    if (systemInitialized) {
-      setInitialCheckDone(true);
-      return;
-    }
-
-    // Silent background audit
-    const checkAdminsExist = async () => {
-      if (!db) {
-        setInitialCheckDone(true);
-        return;
-      }
-      try {
-        const adminsRef = collection(db, "admins");
-        const q = query(adminsRef, limit(1));
-        const snap = await getDocs(q);
-        
-        if (snap.empty) {
-          setIsSystemFresh(true);
-        } else {
-          localStorage.setItem("medtrack_system_initialized", "true");
-        }
-      } catch (e) {
-        // Fail silently to user
-      } finally {
-        setInitialCheckDone(true);
-      }
-    };
-    
-    checkAdminsExist();
-  }, [db]);
+  }, []);
 
   const validateEmail = (email: string) => {
     return email.toLowerCase().endsWith(`@${ORG_DOMAIN}`);
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
 
@@ -85,52 +48,22 @@ export default function LoginPage() {
 
     setLoading(true);
 
-    // Provisional Bootstrap Access
-    if (isSystemFresh && username.toLowerCase() === `admin@${ORG_DOMAIN}` && password === "password123") {
-      localStorage.setItem("medtrack_auth_role", "Super Admin");
-      localStorage.setItem("medtrack_admin_auth", "true");
-      router.push("/dashboard");
-      return;
-    }
-
-    try {
-      if (!auth) throw new Error("Authentication service is offline.");
-      await signInWithEmailAndPassword(auth, username, password);
-
-      const adminsRef = collection(db!, "admins");
-      const emailQuery = query(adminsRef, where("email", "==", username));
-      const querySnapshot = await getDocs(emailQuery);
-      
-      if (!querySnapshot.empty) {
-        const adminData = querySnapshot.docs[0].data();
-        if (adminData.status !== "Active") {
-          toast({
-            title: "Access Revoked",
-            description: "Your administrative account is currently inactive.",
-            variant: "destructive",
-          });
-        } else {
-          localStorage.setItem("medtrack_auth_role", adminData.role);
-          localStorage.setItem("medtrack_admin_auth", "true");
-          localStorage.setItem("medtrack_system_initialized", "true");
-          router.push("/dashboard");
-        }
+    // Simple Hardcoded Authentication
+    setTimeout(() => {
+      if (username.toLowerCase() === MASTER_USER && password === MASTER_PASS) {
+        localStorage.setItem("medtrack_auth_role", "Super Admin");
+        localStorage.setItem("medtrack_admin_auth", "true");
+        localStorage.setItem("medtrack_system_initialized", "true");
+        router.push("/dashboard");
       } else {
         toast({
-          title: "Profile Missing",
-          description: "No administrative profile linked to this address.",
+          title: "Access Denied",
+          description: "Incorrect email or password. Please try again.",
           variant: "destructive",
         });
+        setLoading(false);
       }
-    } catch (error: any) {
-      toast({
-        title: "Login Failed",
-        description: error.code === 'auth/invalid-credential' ? "Incorrect password. Please try again." : error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    }, 800);
   };
 
   if (!isMounted) return null;
@@ -147,32 +80,6 @@ export default function LoginPage() {
       
       <div className="w-full max-w-md">
         <div className="space-y-6">
-          {initialCheckDone && isSystemFresh && (
-            <Card className="border-amber-200 bg-amber-50 shadow-sm">
-              <CardHeader className="pb-2">
-                <div className="flex items-center gap-2 text-amber-800">
-                  <ShieldAlert className="h-4 w-4" />
-                  <CardTitle className="text-sm font-bold uppercase tracking-wide">Facility Bootstrap Mode</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-amber-700 leading-relaxed font-medium">
-                  System uninitialized. Use bootstrap credentials to register the first admin:
-                </p>
-                <div className="mt-3 p-3 bg-white rounded border border-amber-200 space-y-1">
-                  <div className="flex justify-between text-[10px] font-bold">
-                    <span className="text-slate-400">EMAIL:</span>
-                    <code className="text-amber-800">admin@callboxinc.com</code>
-                  </div>
-                  <div className="flex justify-between text-[10px] font-bold">
-                    <span className="text-slate-400">PASS:</span>
-                    <code className="text-amber-800">password123</code>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           <Card className="border-none shadow-2xl overflow-hidden bg-slate-50">
             <div className="h-2 bg-primary w-full" />
             <CardHeader className="space-y-2 text-center pb-8 pt-10">
@@ -221,7 +128,7 @@ export default function LoginPage() {
                     </button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full h-12 text-md font-bold bg-accent hover:bg-accent/90 text-primary shadow-lg mt-4" disabled={loading || !initialCheckDone}>
+                <Button type="submit" className="w-full h-12 text-md font-bold bg-accent hover:bg-accent/90 text-primary shadow-lg mt-4" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Access Dashboard"}
                 </Button>
               </form>
