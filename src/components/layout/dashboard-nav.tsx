@@ -13,10 +13,11 @@ import {
   PlusCircle,
   LogOut,
   ShieldCheck,
-  Contact2
+  Contact2,
+  Settings,
+  Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import {
   SidebarContent,
   SidebarGroup,
@@ -31,30 +32,36 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 
-const navItems = [
+const mainItems = [
   {
     title: "Overview",
     url: "/dashboard",
     icon: LayoutDashboard,
   },
+];
+
+const clinicalItems = [
   {
     title: "Medicine Logs",
     url: "/dashboard/records",
     icon: ClipboardList,
   },
   {
+    title: "Manual Issuance",
+    url: "/dashboard/new",
+    icon: PlusCircle,
+  },
+];
+
+const directoryItems = [
+  {
     title: "Employee Master List",
     url: "/dashboard/employees",
     icon: Contact2,
   },
-  {
-    title: "AI Insights",
-    url: "/dashboard/insights",
-    icon: Lightbulb,
-  },
 ];
 
-const managementItems = [
+const adminItems = [
   {
     title: "User Management",
     url: "/dashboard/users",
@@ -62,9 +69,9 @@ const managementItems = [
     requireSuperAdmin: true,
   },
   {
-    title: "Manual Issuance",
-    url: "/dashboard/new",
-    icon: PlusCircle,
+    title: "AI Insights",
+    url: "/dashboard/insights",
+    icon: Lightbulb,
   },
 ];
 
@@ -89,7 +96,7 @@ export function DashboardNav() {
     router.push("/login");
   };
 
-  const filteredManagementItems = managementItems.filter(item => {
+  const filteredAdminItems = adminItems.filter(item => {
     if (item.requireSuperAdmin) {
       return userRole === "Super Admin";
     }
@@ -106,58 +113,93 @@ export function DashboardNav() {
           <div>
             <h1 className="text-lg font-black leading-none text-slate-800 tracking-tight">MedTrack</h1>
             <p className="text-[9px] text-slate-500 mt-1 font-bold uppercase tracking-[0.15em] flex items-center gap-1">
-              <ShieldCheck className="h-2.5 w-2.5 text-primary" /> Authorized
+              <ShieldCheck className="h-2.5 w-2.5 text-primary" /> Clinical Admin
             </p>
           </div>
         </div>
       </SidebarHeader>
+      
       <SidebarContent className="bg-white">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-3 font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mt-4 mb-2">Core System</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={pathname === item.url}
-                    tooltip={item.title}
-                    className="hover:bg-primary/5 data-[active=true]:bg-primary/10 data-[active=true]:text-slate-900 transition-all"
-                  >
-                    <Link href={item.url} className="flex items-center gap-3">
-                      <item.icon className={cn("h-4 w-4", pathname === item.url ? "text-primary" : "text-slate-400")} />
-                      <span className="font-bold text-xs uppercase tracking-wider">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarMenu>
+            {mainItems.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={pathname === item.url}
+                  className="hover:bg-primary/5 data-[active=true]:bg-primary/10 data-[active=true]:text-slate-900"
+                >
+                  <Link href={item.url} className="flex items-center gap-3">
+                    <item.icon className={cn("h-4 w-4", pathname === item.url ? "text-primary" : "text-slate-400")} />
+                    <span className="font-bold text-xs uppercase tracking-wider">{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="px-3 font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mt-6 mb-2">Management</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {filteredManagementItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={pathname === item.url}
-                    tooltip={item.title}
-                    className="hover:bg-primary/5 data-[active=true]:bg-primary/10 data-[active=true]:text-slate-900 transition-all"
-                  >
-                    <Link href={item.url} className="flex items-center gap-3">
-                      <item.icon className={cn("h-4 w-4", pathname === item.url ? "text-primary" : "text-slate-400")} />
-                      <span className="font-bold text-xs uppercase tracking-wider">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarGroupLabel className="px-3 font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mt-2 mb-2">Clinical Records</SidebarGroupLabel>
+          <SidebarMenu>
+            {clinicalItems.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={pathname === item.url}
+                  className="hover:bg-primary/5 data-[active=true]:bg-primary/10"
+                >
+                  <Link href={item.url} className="flex items-center gap-3">
+                    <item.icon className={cn("h-4 w-4", pathname === item.url ? "text-primary" : "text-slate-400")} />
+                    <span className="font-bold text-xs uppercase tracking-wider">{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="px-3 font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mt-2 mb-2">Directories</SidebarGroupLabel>
+          <SidebarMenu>
+            {directoryItems.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={pathname === item.url}
+                  className="hover:bg-primary/5 data-[active=true]:bg-primary/10"
+                >
+                  <Link href={item.url} className="flex items-center gap-3">
+                    <item.icon className={cn("h-4 w-4", pathname === item.url ? "text-primary" : "text-slate-400")} />
+                    <span className="font-bold text-xs uppercase tracking-wider">{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="px-3 font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mt-2 mb-2">System Admin</SidebarGroupLabel>
+          <SidebarMenu>
+            {filteredAdminItems.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={pathname === item.url}
+                  className="hover:bg-primary/5 data-[active=true]:bg-primary/10"
+                >
+                  <Link href={item.url} className="flex items-center gap-3">
+                    <item.icon className={cn("h-4 w-4", pathname === item.url ? "text-primary" : "text-slate-400")} />
+                    <span className="font-bold text-xs uppercase tracking-wider">{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
+
       <SidebarFooter className="border-t p-4 space-y-2 bg-slate-50/30">
         <div className="px-2 py-1.5 flex items-center gap-2 text-[9px] font-black uppercase text-slate-500 tracking-[0.1em] bg-white rounded-md border border-slate-100">
           <UserCircle className="h-3 w-3 text-primary" />

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useRef } from "react";
@@ -10,7 +9,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -22,7 +21,6 @@ import {
   Contact2, 
   Loader2, 
   CheckCircle2, 
-  AlertCircle,
   Upload,
   FileSpreadsheet,
   Filter
@@ -132,7 +130,6 @@ export default function EmployeeMasterListPage() {
       const batch = writeBatch(db);
       let count = 0;
 
-      // Skip header, parse lines
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
@@ -208,8 +205,8 @@ export default function EmployeeMasterListPage() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline tracking-tight text-accent uppercase">Verified Personnel Directory</h1>
-          <p className="text-muted-foreground mt-1">Clinical master list for medicine issuance verification.</p>
+          <h1 className="text-3xl font-bold font-headline tracking-tight text-accent uppercase">Clinical Directory</h1>
+          <p className="text-muted-foreground mt-1">Personnel authorized for medicine acquisition.</p>
         </div>
         
         <div className="flex flex-wrap gap-2">
@@ -241,7 +238,7 @@ export default function EmployeeMasterListPage() {
                 <DialogHeader>
                   <DialogTitle className="font-headline text-accent uppercase tracking-tight">New Verified Employee</DialogTitle>
                   <DialogDescription>
-                    Add a staff member to the facility's authorized directory.
+                    Add a staff member to the facility's clinical directory.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -333,81 +330,80 @@ export default function EmployeeMasterListPage() {
       </div>
 
       <Card className="border-none shadow-sm overflow-hidden bg-white">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-slate-50/50">
-                <TableRow>
-                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Identity</TableHead>
-                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Department</TableHead>
-                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider text-center">Employee ID</TableHead>
-                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider text-center">Status</TableHead>
-                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEmployees.length > 0 ? (
-                  filteredEmployees.map((emp) => (
-                    <TableRow key={emp.id} className="hover:bg-primary/5 transition-colors group">
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-slate-800">{emp.fullName}</span>
-                          <span className="text-xs text-slate-500 font-medium">{emp.email}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="font-bold text-[10px] uppercase bg-slate-100 text-slate-600 border-none">
-                          {emp.department}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center font-mono text-xs text-slate-500">
-                        {emp.employeeId || "—"}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-emerald-600 uppercase">
-                          <CheckCircle2 className="h-3 w-3" /> Verified
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => removeEmployee(emp.id)}
-                          className="text-slate-400 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-48 text-center">
-                      {loading ? (
-                        <div className="flex flex-col items-center gap-2 text-slate-400">
-                          <Loader2 className="h-8 w-8 animate-spin" />
-                          <span className="text-xs font-bold uppercase tracking-widest">Accessing Clinical Directory...</span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-2 text-slate-400">
-                          <Contact2 className="h-10 w-10 opacity-20" />
-                          <p className="font-medium italic">No personnel found matching current filters.</p>
-                        </div>
-                      )}
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-slate-50/50">
+              <TableRow>
+                <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Identity</TableHead>
+                <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Department</TableHead>
+                <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider text-center">Employee ID</TableHead>
+                <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider text-center">Status</TableHead>
+                <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredEmployees.length > 0 ? (
+                filteredEmployees.map((emp) => (
+                  <TableRow key={emp.id} className="hover:bg-primary/5 transition-colors group">
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-800">{emp.fullName}</span>
+                        <span className="text-xs text-slate-500 font-medium">{emp.email}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="font-bold text-[10px] uppercase bg-slate-100 text-slate-600 border-none">
+                        {emp.department}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center font-mono text-xs text-slate-500">
+                      {emp.employeeId || "—"}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-emerald-600 uppercase">
+                        <CheckCircle2 className="h-3 w-3" /> Verified
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => removeEmployee(emp.id)}
+                        className="text-slate-400 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-48 text-center">
+                    {loading ? (
+                      <div className="flex flex-col items-center gap-2 text-slate-400">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                        <span className="text-xs font-bold uppercase tracking-widest">Accessing Directory...</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 text-slate-400">
+                        <Contact2 className="h-10 w-10 opacity-20" />
+                        <p className="font-medium italic">No personnel found matching current filters.</p>
+                      </div>
+                    )}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </Card>
+      
       <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex items-start gap-3">
         <FileSpreadsheet className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
         <div className="text-[10px] text-slate-500 font-medium uppercase leading-relaxed tracking-wider">
-          <p className="font-bold text-slate-700 mb-1">CSV Format Requirements:</p>
-          <p>Columns must follow: [Full Name], [Email], [Department], [Employee ID]</p>
-          <p>All emails must end with @{ORG_DOMAIN} for successful verification.</p>
+          <p className="font-bold text-slate-700 mb-1">CSV Import Format:</p>
+          <p>[Full Name], [Email], [Department], [Employee ID]</p>
+          <p>Strict @{ORG_DOMAIN} validation enforced for all entries.</p>
         </div>
       </div>
     </div>
