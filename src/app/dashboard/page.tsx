@@ -19,8 +19,10 @@ import { Badge } from "@/components/ui/badge";
 export default function DashboardOverview() {
   const [records, setRecords] = useState<any[]>([]);
   const [admins, setAdmins] = useState<any[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     const storedLogs = JSON.parse(localStorage.getItem("medtrack_issuances") || "[]");
     const storedAdmins = JSON.parse(localStorage.getItem("medtrack_admins") || "[]");
     setRecords(storedLogs);
@@ -28,6 +30,7 @@ export default function DashboardOverview() {
   }, []);
 
   const stats = useMemo(() => {
+    if (!isMounted) return { total: 0, today: 0, medicines: 0 };
     const today = new Date().toISOString().split('T')[0];
     const todayRecords = records.filter(r => r.date === today);
     
@@ -36,11 +39,13 @@ export default function DashboardOverview() {
       today: todayRecords.length,
       medicines: records.reduce((acc, curr) => acc + (curr.medicineTaken?.length || 0), 0)
     };
-  }, [records]);
+  }, [records, isMounted]);
 
   const recentRecords = useMemo(() => {
     return [...records].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
   }, [records]);
+
+  if (!isMounted) return null;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -50,7 +55,7 @@ export default function DashboardOverview() {
           <p className="text-muted-foreground mt-1">Real-time clinical metrics and system overview.</p>
         </div>
         <div className="flex gap-2">
-          <Button asChild className="gap-2">
+          <Button asChild className="gap-2 bg-primary text-accent hover:bg-primary/90">
             <Link href="/dashboard/new">
               <PlusCircle className="h-4 w-4" /> New Record
             </Link>

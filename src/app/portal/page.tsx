@@ -22,6 +22,7 @@ export default function PublicPortalPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -36,9 +37,13 @@ export default function PublicPortalPage() {
     { name: "", quantity: 1, dosage: "" }
   ]);
 
-  // Personnel Verification logic using Local Storage
   useEffect(() => {
-    if (formData.email.length < 5 || !formData.email.endsWith(`@${ORG_DOMAIN}`)) {
+    setIsMounted(true);
+  }, []);
+
+  // Personnel Verification logic
+  useEffect(() => {
+    if (!isMounted || formData.email.length < 5 || !formData.email.endsWith(`@${ORG_DOMAIN}`)) {
       setIsVerified(null);
       return;
     }
@@ -61,7 +66,7 @@ export default function PublicPortalPage() {
 
     const timer = setTimeout(checkEmployee, 400);
     return () => clearTimeout(timer);
-  }, [formData.email]);
+  }, [formData.email, isMounted]);
 
   const addMedicine = () => {
     setMedicines([...medicines, { name: "", quantity: 1, dosage: "" }]);
@@ -86,7 +91,7 @@ export default function PublicPortalPage() {
     if (!isVerified) {
       toast({
         title: "Personnel Not Registered",
-        description: `Your @${ORG_DOMAIN} account is not found in the verified personnel list. Please contact HR.`,
+        description: `Your @${ORG_DOMAIN} account is not found in the verified personnel list.`,
         variant: "destructive"
       });
       return;
@@ -108,7 +113,6 @@ export default function PublicPortalPage() {
       createdAt: new Date().toISOString(),
     };
 
-    // Save to Local Storage
     const existingLogs = JSON.parse(localStorage.getItem("medtrack_issuances") || "[]");
     localStorage.setItem("medtrack_issuances", JSON.stringify([...existingLogs, record]));
 
@@ -125,6 +129,8 @@ export default function PublicPortalPage() {
       });
     }, 800);
   };
+
+  if (!isMounted) return null;
 
   if (showReceipt && submittedRecord) {
     return (

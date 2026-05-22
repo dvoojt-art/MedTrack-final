@@ -46,7 +46,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import jsPDF from "jsPDF";
+import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Document, Packer, Paragraph, Table as DocxTable, TableCell as DocxTableCell, TableRow as DocxTableRow, WidthType, AlignmentType, HeadingLevel } from "docx";
 import { saveAs } from "file-saver";
@@ -73,6 +73,7 @@ export default function EmployeeMasterListPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -82,7 +83,7 @@ export default function EmployeeMasterListPage() {
   });
 
   useEffect(() => {
-    // Load from Local Storage
+    setIsMounted(true);
     const stored = JSON.parse(localStorage.getItem("medtrack_employees") || "[]");
     setEmployees(stored);
     setLoading(false);
@@ -103,7 +104,7 @@ export default function EmployeeMasterListPage() {
     if (!validateEmail(formData.email)) {
       toast({
         title: "Domain Verification Failed",
-        description: `Only users with @${ORG_DOMAIN} emails are authorized for the master list.`,
+        description: `Only users with @${ORG_DOMAIN} emails are authorized.`,
         variant: "destructive"
       });
       return;
@@ -121,7 +122,7 @@ export default function EmployeeMasterListPage() {
     
     toast({
       title: "Employee Added",
-      description: `${formData.fullName} has been added to the Master List.`,
+      description: `${formData.fullName} added to directory.`,
     });
 
     setFormData({ fullName: "", email: "", department: "", employeeId: "" });
@@ -143,148 +144,82 @@ export default function EmployeeMasterListPage() {
   }, [employees, searchTerm, deptFilter]);
 
   const exportAsCSV = () => {
-    if (!filteredEmployees || filteredEmployees.length === 0) return;
-    
-    const headers = ["Full Name", "Email", "Department", "Employee ID", "Status"];
-    const rows = filteredEmployees.map(emp => [
-      `"${emp.fullName.replace(/"/g, '""')}"`,
-      `"${emp.email.replace(/"/g, '""')}"`,
-      `"${emp.department.replace(/"/g, '""')}"`,
-      `"${(emp.employeeId || "").replace(/"/g, '""')}"`,
-      emp.status
-    ]);
-
-    const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
-    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `employee_directory_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    if (filteredEmployees.length === 0) return;
+    const headers = ["Full Name", "Email", "Department", "ID", "Status"];
+    const rows = filteredEmployees.map(emp => [emp.fullName, emp.email, emp.department, emp.employeeId, emp.status]);
+    const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    saveAs(blob, `employees_${new Date().toISOString().split('T')[0]}.csv`);
   };
 
   const exportAsPDF = () => {
-    if (!filteredEmployees || filteredEmployees.length === 0) return;
-
-    const doc = new jsPDF('p', 'mm', 'a4');
-    doc.setFontSize(18);
-    doc.text("Clinical Directory Master List", 14, 22);
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`Total Personnel: ${filteredEmployees.length} | Date: ${new Date().toLocaleDateString()}`, 14, 30);
-
-    const tableHeaders = [["Name", "Work Email", "Department", "ID", "Status"]];
-    const tableData = filteredEmployees.map(emp => [
-      emp.fullName,
-      emp.email,
-      emp.department,
-      emp.employeeId || "—",
-      emp.status
-    ]);
-
+    if (filteredEmployees.length === 0) return;
+    const doc = new jsPDF();
+    doc.text("Clinical Directory", 14, 15);
     autoTable(doc, {
-      head: tableHeaders,
-      body: tableData,
-      startY: 35,
-      theme: 'grid',
-      headStyles: { fillColor: [51, 65, 85], textColor: [255, 202, 9] },
-      styles: { fontSize: 8 },
+      head: [["Name", "Email", "Department", "ID"]],
+      body: filteredEmployees.map(emp => [emp.fullName, emp.email, emp.department, emp.employeeId || "—"]),
+      startY: 20,
     });
-
-    doc.save(`employee_directory_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`employees_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   const exportAsDOCX = async () => {
-    if (!filteredEmployees || filteredEmployees.length === 0) return;
-
-    const tableRows = filteredEmployees.map(emp => 
-      new DocxTableRow({
-        children: [
-          new DocxTableCell({ children: [new Paragraph(emp.fullName || "")] }),
-          new DocxTableCell({ children: [new Paragraph(emp.email || "")] }),
-          new DocxTableCell({ children: [new Paragraph(emp.department || "")] }),
-          new DocxTableCell({ children: [new Paragraph(emp.status || "")] }),
-        ],
-      })
-    );
-
+    if (filteredEmployees.length === 0) return;
     const doc = new Document({
       sections: [{
-        properties: {},
         children: [
-          new Paragraph({
-            text: "Callbox Davao Clinical Directory",
-            heading: HeadingLevel.HEADING_1,
-            alignment: AlignmentType.CENTER,
-          }),
-          new Paragraph({
-            text: `Authorized Personnel List | Count: ${filteredEmployees.length}`,
-            alignment: AlignmentType.CENTER,
-          }),
-          new Paragraph({ text: "" }),
+          new Paragraph({ text: "Clinical Directory", heading: HeadingLevel.HEADING_1 }),
           new DocxTable({
             width: { size: 100, type: WidthType.PERCENTAGE },
             rows: [
               new DocxTableRow({
                 children: [
-                  new DocxTableCell({ children: [new Paragraph({ text: "Name", style: "bold" })] }),
-                  new DocxTableCell({ children: [new Paragraph({ text: "Email", style: "bold" })] }),
-                  new DocxTableCell({ children: [new Paragraph({ text: "Department", style: "bold" })] }),
-                  new DocxTableCell({ children: [new Paragraph({ text: "Status", style: "bold" })] }),
-                ],
+                  new DocxTableCell({ children: [new Paragraph("Name")] }),
+                  new DocxTableCell({ children: [new Paragraph("Email")] }),
+                  new DocxTableCell({ children: [new Paragraph("Dept")] }),
+                ]
               }),
-              ...tableRows,
-            ],
-          }),
-        ],
-      }],
+              ...filteredEmployees.map(emp => new DocxTableRow({
+                children: [
+                  new DocxTableCell({ children: [new Paragraph(emp.fullName)] }),
+                  new DocxTableCell({ children: [new Paragraph(emp.email)] }),
+                  new DocxTableCell({ children: [new Paragraph(emp.department)] }),
+                ]
+              }))
+            ]
+          })
+        ]
+      }]
     });
-
     const blob = await Packer.toBlob(doc);
-    saveAs(blob, `employee_directory_${new Date().toISOString().split('T')[0]}.docx`);
+    saveAs(blob, `employees_${new Date().toISOString().split('T')[0]}.docx`);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setIsImporting(true);
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
-      const lines = text.split('\n');
-      const newEntries: any[] = [];
-
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-
-        const parts = line.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
-        const [name, email, dept, id] = parts;
-        
-        if (name && email && validateEmail(email)) {
-          newEntries.push({
-            id: Math.random().toString(36).substr(2, 9),
-            fullName: name,
-            email: email,
-            department: dept || "General Services (GenServ)",
-            employeeId: id || "",
-            status: "Active",
-            createdAt: new Date().toISOString(),
-          });
-        }
-      }
-
+      const lines = text.split('\n').slice(1);
+      const newEntries = lines.filter(l => l.trim()).map(line => {
+        const [name, email, dept, id] = line.split(',').map(s => s.trim());
+        return {
+          id: Math.random().toString(36).substr(2, 9),
+          fullName: name,
+          email,
+          department: dept || "IT",
+          employeeId: id || "",
+          status: "Active",
+          createdAt: new Date().toISOString()
+        };
+      }).filter(entry => entry.email && validateEmail(entry.email));
+      
       saveEmployees([...employees, ...newEntries]);
-      toast({
-        title: "Import Successful",
-        description: `Successfully added ${newEntries.length} verified personnel to the clinical list.`,
-      });
+      toast({ title: "Import Successful", description: `Added ${newEntries.length} personnel.` });
       setIsImporting(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     };
     reader.readAsText(file);
   };
@@ -292,11 +227,10 @@ export default function EmployeeMasterListPage() {
   const removeEmployee = (id: string) => {
     const updated = employees.filter(emp => emp.id !== id);
     saveEmployees(updated);
-    toast({
-      title: "Employee Removed",
-      description: "Record deleted from the master list.",
-    });
+    toast({ title: "Employee Removed", description: "Directory updated." });
   };
+
+  if (!isMounted) return null;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -307,39 +241,22 @@ export default function EmployeeMasterListPage() {
         </div>
         
         <div className="flex flex-wrap gap-2">
-          <Input 
-            type="file" 
-            accept=".csv" 
-            className="hidden" 
-            ref={fileInputRef} 
-            onChange={handleFileUpload} 
-          />
-          <Button 
-            variant="outline" 
-            className="gap-2 border-slate-200 text-slate-600 font-bold uppercase text-[10px]"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isImporting}
-          >
+          <Input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
+          <Button variant="outline" className="gap-2 border-slate-200" onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
             {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             Import CSV
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2 border-slate-200 text-slate-600 font-bold uppercase text-[10px]" disabled={!filteredEmployees.length}>
-                <Download className="h-4 w-4" /> Export List
+              <Button variant="outline" className="gap-2 border-slate-200" disabled={!filteredEmployees.length}>
+                <Download className="h-4 w-4" /> Export
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={exportAsPDF} className="gap-2 cursor-pointer">
-                <FileText className="h-4 w-4 text-red-500" /> Export as PDF
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={exportAsDOCX} className="gap-2 cursor-pointer">
-                <File className="h-4 w-4 text-blue-500" /> Export as DOCX
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={exportAsCSV} className="gap-2 cursor-pointer">
-                <FileSpreadsheet className="h-4 w-4 text-emerald-500" /> Export as CSV
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAsPDF} className="gap-2"><FileText className="h-4 w-4 text-red-500" /> PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAsDOCX} className="gap-2"><File className="h-4 w-4 text-blue-500" /> DOCX</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAsCSV} className="gap-2"><FileSpreadsheet className="h-4 w-4 text-emerald-500" /> CSV</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -349,63 +266,36 @@ export default function EmployeeMasterListPage() {
                 <UserPlus className="h-4 w-4" /> Register Personnel
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent>
               <form onSubmit={handleAddEmployee}>
                 <DialogHeader>
-                  <DialogTitle className="font-headline text-accent uppercase tracking-tight">New Verified Employee</DialogTitle>
-                  <DialogDescription>
-                    Add a staff member to the facility's clinical directory.
-                  </DialogDescription>
+                  <DialogTitle className="font-headline text-accent uppercase tracking-tight">New Employee</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase text-slate-400">Full Name</Label>
-                    <Input 
-                      placeholder="e.g. Juan Dela Cruz" 
-                      value={formData.fullName}
-                      onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                      required
-                    />
+                    <Input value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value})} required />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase text-slate-400">Work Email (@{ORG_DOMAIN})</Label>
-                    <Input 
-                      type="email" 
-                      placeholder={`username@${ORG_DOMAIN}`} 
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className={formData.email && !validateEmail(formData.email) ? "border-destructive ring-destructive/20" : ""}
-                      required
-                    />
+                    <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase text-slate-400">ID Number</Label>
-                      <Input 
-                        placeholder="Optional" 
-                        value={formData.employeeId}
-                        onChange={(e) => setFormData({...formData, employeeId: e.target.value})}
-                      />
+                      <Input value={formData.employeeId} onChange={(e) => setFormData({...formData, employeeId: e.target.value})} />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase text-slate-400">Department</Label>
                       <Select value={formData.department} onValueChange={(val) => setFormData({...formData, department: val})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Dept" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {DEPARTMENTS.map((dept) => (
-                            <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                          ))}
-                        </SelectContent>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{DEPARTMENTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type="submit" className="w-full bg-accent text-primary font-black uppercase tracking-widest" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify & Save"}
-                  </Button>
+                  <Button type="submit" className="w-full bg-accent text-primary font-black uppercase tracking-widest" disabled={isSubmitting}>Save</Button>
                 </DialogFooter>
               </form>
             </DialogContent>
@@ -415,113 +305,55 @@ export default function EmployeeMasterListPage() {
 
       <div className="flex flex-col sm:flex-row gap-4 items-end">
         <div className="flex-1 space-y-2">
-          <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Global Search</Label>
+          <Label className="text-[10px] font-black uppercase text-slate-400">Search</Label>
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Search by name, email or ID..."
-              className="pl-10 h-10 border-slate-200 bg-white"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            <Input className="pl-10 h-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Name, Email or ID" />
           </div>
         </div>
         <div className="w-full sm:w-[240px] space-y-2">
-          <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Dept Filter</Label>
+          <Label className="text-[10px] font-black uppercase text-slate-400">Filter</Label>
           <Select value={deptFilter} onValueChange={setDeptFilter}>
-            <SelectTrigger className="h-10 bg-white border-slate-200">
-              <div className="flex items-center gap-2">
-                <Filter className="h-3 w-3 text-slate-400" />
-                <SelectValue placeholder="All Departments" />
-              </div>
-            </SelectTrigger>
+            <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="All">All Departments</SelectItem>
-              {DEPARTMENTS.map((dept) => (
-                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-              ))}
+              {DEPARTMENTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
       </div>
 
       <Card className="border-none shadow-sm overflow-hidden bg-white">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader className="bg-slate-50/50">
-              <TableRow>
-                <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Identity</TableHead>
-                <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Department</TableHead>
-                <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider text-center">Employee ID</TableHead>
-                <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider text-center">Status</TableHead>
-                <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider text-right">Actions</TableHead>
+        <Table>
+          <TableHeader className="bg-slate-50">
+            <TableRow>
+              <TableHead className="font-bold text-[10px] uppercase">Identity</TableHead>
+              <TableHead className="font-bold text-[10px] uppercase">Department</TableHead>
+              <TableHead className="font-bold text-[10px] uppercase text-center">ID</TableHead>
+              <TableHead className="font-bold text-[10px] uppercase text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredEmployees.length > 0 ? filteredEmployees.map(emp => (
+              <TableRow key={emp.id}>
+                <TableCell>
+                  <div className="flex flex-col">
+                    <span className="font-bold">{emp.fullName}</span>
+                    <span className="text-xs text-slate-500">{emp.email}</span>
+                  </div>
+                </TableCell>
+                <TableCell><Badge variant="secondary" className="text-[10px] uppercase">{emp.department}</Badge></TableCell>
+                <TableCell className="text-center font-mono text-xs">{emp.employeeId || "—"}</TableCell>
+                <TableCell className="text-right">
+                  <Button variant="ghost" size="icon" onClick={() => removeEmployee(emp.id)}><Trash2 className="h-4 w-4 text-slate-400 hover:text-destructive" /></Button>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredEmployees.length > 0 ? (
-                filteredEmployees.map((emp) => (
-                  <TableRow key={emp.id} className="hover:bg-primary/5 transition-colors group">
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-slate-800">{emp.fullName}</span>
-                        <span className="text-xs text-slate-500 font-medium">{emp.email}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="font-bold text-[10px] uppercase bg-slate-100 text-slate-600 border-none">
-                        {emp.department}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center font-mono text-xs text-slate-500">
-                      {emp.employeeId || "—"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-emerald-600 uppercase">
-                        <CheckCircle2 className="h-3 w-3" /> Verified
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => removeEmployee(emp.id)}
-                        className="text-slate-400 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-48 text-center">
-                    {loading ? (
-                      <div className="flex flex-col items-center gap-2 text-slate-400">
-                        <Loader2 className="h-8 w-8 animate-spin" />
-                        <span className="text-xs font-bold uppercase tracking-widest">Accessing Directory...</span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2 text-slate-400">
-                        <Contact2 className="h-10 w-10 opacity-20" />
-                        <p className="font-medium italic">No personnel found matching current filters.</p>
-                      </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+            )) : (
+              <TableRow><TableCell colSpan={4} className="h-48 text-center text-slate-400 italic">No personnel found.</TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
       </Card>
-      
-      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex items-start gap-3">
-        <FileSpreadsheet className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
-        <div className="text-[10px] text-slate-500 font-medium uppercase leading-relaxed tracking-wider">
-          <p className="font-bold text-slate-700 mb-1">CSV Import Format:</p>
-          <p>[Full Name], [Email], [Department], [Employee ID]</p>
-          <p>Strict @{ORG_DOMAIN} validation enforced for all entries.</p>
-        </div>
-      </div>
     </div>
   );
 }
