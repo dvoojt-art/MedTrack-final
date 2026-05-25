@@ -1,29 +1,47 @@
-
 "use client";
 
+import { supabase } from "@/lib/supabase";
 import { useState, useMemo, useEffect } from "react";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Download, Search, Filter, FileText, FileSpreadsheet, File } from "lucide-react";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  Download,
+  Search,
+  Filter,
+  FileText,
+  FileSpreadsheet,
+  File,
+  Trash2,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import jsPDF from "jsPDF";
+import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { Document, Packer, Paragraph, Table as DocxTable, TableCell as DocxTableCell, TableRow as DocxTableRow, WidthType, AlignmentType, HeadingLevel } from "docx";
+import {
+  Document,
+  Packer,
+  Paragraph,
+  Table as DocxTable,
+  TableCell as DocxTableCell,
+  TableRow as DocxTableRow,
+  WidthType,
+  AlignmentType,
+  HeadingLevel,
+} from "docx";
 import { saveAs } from "file-saver";
 
 export default function RecordsPage() {
@@ -32,27 +50,76 @@ export default function RecordsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch from Local Storage
-    const stored = JSON.parse(localStorage.getItem("medtrack_issuances") || "[]");
-    setRecords(stored);
-    setLoading(false);
+    const loadRecords = async () => {
+      const { data, error } = await supabase
+        .from("issuances")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        setLoading(false);
+        return;
+      }
+
+      setRecords(
+        (data || []).map((record) => ({
+          id: record.id,
+          name: record.name,
+          email: record.email,
+          age: record.age,
+          gender: record.gender,
+          department: record.department,
+          chiefComplaints: record.chief_complaints,
+          medicineTaken: record.medicine_taken || [],
+          date: record.date,
+          time: record.time,
+          createdAt: record.created_at,
+        })),
+      );
+
+      setLoading(false);
+    };
+
+    loadRecords();
   }, []);
 
   const filteredRecords = useMemo(() => {
-    return records.filter(r => 
-      r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (r.chiefComplaints && r.chiefComplaints.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      r.medicineTaken?.some((m: any) => m.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return records
+      .filter((r) => {
+        const search = searchTerm.toLowerCase();
+
+        return (
+          r.name?.toLowerCase().includes(search) ||
+          r.email?.toLowerCase().includes(search) ||
+          r.department?.toLowerCase().includes(search) ||
+          r.chiefComplaints?.toLowerCase().includes(search) ||
+          r.medicineTaken?.some((m: any) =>
+            m.name?.toLowerCase().includes(search),
+          )
+        );
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
   }, [records, searchTerm]);
 
   const exportAsCSV = () => {
     if (!filteredRecords || filteredRecords.length === 0) return;
-    
-    const headers = ["Date", "Time", "Patient Name", "Email", "Age", "Gender", "Department", "Chief Complaints", "Medicines Issued"];
-    const rows = filteredRecords.map(r => [
+
+    const headers = [
+      "Date",
+      "Time",
+      "Patient Name",
+      "Email",
+      "Age",
+      "Gender",
+      "Department",
+      "Chief Complaints",
+      "Medicines Issued",
+    ];
+    const rows = filteredRecords.map((r) => [
       r.date,
       r.time,
       `"${r.name.replace(/"/g, '""')}"`,
@@ -61,15 +128,23 @@ export default function RecordsPage() {
       r.gender,
       `"${r.department.replace(/"/g, '""')}"`,
       `"${(r.chiefComplaints || "").replace(/"/g, '""')}"`,
-      `"${r.medicineTaken?.map((m: any) => `${m.name} (${m.quantity})`).join('; ')}"`
+      `"${r.medicineTaken?.map((m: any) => `${m.name} (${m.quantity})`).join("; ")}"`,
     ]);
 
-    const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
-    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.join(",")),
+    ].join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `medtrack_records_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute(
+      "download",
+      `medtrack_records_${new Date().toISOString().split("T")[0]}.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -79,108 +154,172 @@ export default function RecordsPage() {
   const exportAsPDF = () => {
     if (!filteredRecords || filteredRecords.length === 0) return;
 
-    const doc = new jsPDF('l', 'mm', 'a4');
+    const doc = new jsPDF("l", "mm", "a4");
     doc.setFontSize(18);
     doc.text("MedTrack Medicine Issuance Report", 14, 22);
     doc.setFontSize(11);
     doc.setTextColor(100);
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
 
-    const tableHeaders = [["Date", "Time", "Patient Name", "Email", "Dept", "Medicines"]];
-    const tableData = filteredRecords.map(r => [
+    const tableHeaders = [
+      ["Date", "Time", "Patient Name", "Email", "Dept", "Medicines"],
+    ];
+    const tableData = filteredRecords.map((r) => [
       r.date,
       r.time,
       r.name,
       r.email || "N/A",
       r.department,
-      r.medicineTaken?.map((m: any) => `${m.name} (${m.quantity})`).join(', ')
+      r.medicineTaken?.map((m: any) => `${m.name} (${m.quantity})`).join(", "),
     ]);
 
     autoTable(doc, {
       head: tableHeaders,
       body: tableData,
       startY: 35,
-      theme: 'grid',
+      theme: "grid",
       headStyles: { fillColor: [51, 65, 85], textColor: [255, 202, 9] },
       styles: { fontSize: 8 },
     });
 
-    doc.save(`medtrack_records_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`medtrack_records_${new Date().toISOString().split("T")[0]}.pdf`);
   };
 
   const exportAsDOCX = async () => {
     if (!filteredRecords || filteredRecords.length === 0) return;
 
-    const tableRows = filteredRecords.map(r => 
-      new DocxTableRow({
-        children: [
-          new DocxTableCell({ children: [new Paragraph(r.date || "")] }),
-          new DocxTableCell({ children: [new Paragraph(r.name || "")] }),
-          new DocxTableCell({ children: [new Paragraph(r.department || "")] }),
-          new DocxTableCell({ children: [new Paragraph(r.medicineTaken?.map((m: any) => `${m.name}(${m.quantity})`).join(', ') || "")] }),
-        ],
-      })
+    const tableRows = filteredRecords.map(
+      (r) =>
+        new DocxTableRow({
+          children: [
+            new DocxTableCell({ children: [new Paragraph(r.date || "")] }),
+            new DocxTableCell({ children: [new Paragraph(r.name || "")] }),
+            new DocxTableCell({
+              children: [new Paragraph(r.department || "")],
+            }),
+            new DocxTableCell({
+              children: [
+                new Paragraph(
+                  r.medicineTaken
+                    ?.map((m: any) => `${m.name}(${m.quantity})`)
+                    .join(", ") || "",
+                ),
+              ],
+            }),
+          ],
+        }),
     );
 
     const doc = new Document({
-      sections: [{
-        properties: {},
-        children: [
-          new Paragraph({
-            text: "MedTrack Clinical Issuance Record",
-            heading: HeadingLevel.HEADING_1,
-            alignment: AlignmentType.CENTER,
-          }),
-          new Paragraph({
-            text: `Generated on: ${new Date().toLocaleString()}`,
-            alignment: AlignmentType.RIGHT,
-          }),
-          new Paragraph({ text: "" }),
-          new DocxTable({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            rows: [
-              new DocxTableRow({
-                children: [
-                  new DocxTableCell({ children: [new Paragraph({ text: "Date", style: "bold" })] }),
-                  new DocxTableCell({ children: [new Paragraph({ text: "Patient", style: "bold" })] }),
-                  new DocxTableCell({ children: [new Paragraph({ text: "Department", style: "bold" })] }),
-                  new DocxTableCell({ children: [new Paragraph({ text: "Medicines", style: "bold" })] }),
-                ],
-              }),
-              ...tableRows,
-            ],
-          }),
-        ],
-      }],
+      sections: [
+        {
+          properties: {},
+          children: [
+            new Paragraph({
+              text: "MedTrack Clinical Issuance Record",
+              heading: HeadingLevel.HEADING_1,
+              alignment: AlignmentType.CENTER,
+            }),
+            new Paragraph({
+              text: `Generated on: ${new Date().toLocaleString()}`,
+              alignment: AlignmentType.RIGHT,
+            }),
+            new Paragraph({ text: "" }),
+            new DocxTable({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: [
+                new DocxTableRow({
+                  children: [
+                    new DocxTableCell({
+                      children: [
+                        new Paragraph({ text: "Date", style: "bold" }),
+                      ],
+                    }),
+                    new DocxTableCell({
+                      children: [
+                        new Paragraph({ text: "Patient", style: "bold" }),
+                      ],
+                    }),
+                    new DocxTableCell({
+                      children: [
+                        new Paragraph({ text: "Department", style: "bold" }),
+                      ],
+                    }),
+                    new DocxTableCell({
+                      children: [
+                        new Paragraph({ text: "Medicines", style: "bold" }),
+                      ],
+                    }),
+                  ],
+                }),
+                ...tableRows,
+              ],
+            }),
+          ],
+        },
+      ],
     });
 
     const blob = await Packer.toBlob(doc);
-    saveAs(blob, `medtrack_records_${new Date().toISOString().split('T')[0]}.docx`);
+    saveAs(
+      blob,
+      `medtrack_records_${new Date().toISOString().split("T")[0]}.docx`,
+    );
+  };
+
+  const removeRecord = async (id: string) => {
+    const { error } = await supabase.from("issuances").delete().eq("id", id);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setRecords((prev) => prev.filter((r) => r.id !== id));
   };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline tracking-tight text-accent uppercase">Medicine Issuance Logs</h1>
-          <p className="text-muted-foreground mt-1 text-slate-500 font-medium">Real-time distribution records.</p>
+          <h1 className="text-3xl font-bold font-headline tracking-tight text-accent uppercase">
+            Medicine Issuance Logs
+          </h1>
+          <p className="text-muted-foreground mt-1 text-slate-500 font-medium">
+            Real-time distribution records.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" disabled={loading || !filteredRecords?.length} className="gap-2 border-slate-200">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={loading || !filteredRecords?.length}
+                className="gap-2 border-slate-200"
+              >
                 <Download className="h-4 w-4" /> Export Report
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={exportAsPDF} className="gap-2 cursor-pointer">
+              <DropdownMenuItem
+                onClick={exportAsPDF}
+                className="gap-2 cursor-pointer"
+              >
                 <FileText className="h-4 w-4 text-red-500" /> Export as PDF
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={exportAsDOCX} className="gap-2 cursor-pointer">
+              <DropdownMenuItem
+                onClick={exportAsDOCX}
+                className="gap-2 cursor-pointer"
+              >
                 <File className="h-4 w-4 text-blue-500" /> Export as DOCX
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={exportAsCSV} className="gap-2 cursor-pointer">
-                <FileSpreadsheet className="h-4 w-4 text-emerald-500" /> Export as CSV
+              <DropdownMenuItem
+                onClick={exportAsCSV}
+                className="gap-2 cursor-pointer"
+              >
+                <FileSpreadsheet className="h-4 w-4 text-emerald-500" /> Export
+                as CSV
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -209,57 +348,111 @@ export default function RecordsPage() {
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow>
-                  <TableHead className="w-[100px] font-bold text-slate-600 uppercase text-[10px] tracking-wider">Date</TableHead>
-                  <TableHead className="w-[80px] font-bold text-slate-600 uppercase text-[10px] tracking-wider">Time</TableHead>
-                  <TableHead className="font-bold text-slate-800 uppercase text-[10px] tracking-wider">Patient Name</TableHead>
-                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Email</TableHead>
-                  <TableHead className="w-[60px] font-bold text-slate-600 uppercase text-[10px] tracking-wider text-center">Age</TableHead>
-                  <TableHead className="w-[80px] font-bold text-slate-600 uppercase text-[10px] tracking-wider">Gender</TableHead>
-                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Department</TableHead>
-                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Chief Complaints</TableHead>
-                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Medicines</TableHead>
+                  <TableHead className="w-[100px] font-bold text-slate-600 uppercase text-[10px] tracking-wider">
+                    Date
+                  </TableHead>
+                  <TableHead className="w-[80px] font-bold text-slate-600 uppercase text-[10px] tracking-wider">
+                    Time
+                  </TableHead>
+                  <TableHead className="font-bold text-slate-800 uppercase text-[10px] tracking-wider">
+                    Patient Name
+                  </TableHead>
+                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">
+                    Email
+                  </TableHead>
+                  <TableHead className="w-[60px] font-bold text-slate-600 uppercase text-[10px] tracking-wider text-center">
+                    Age
+                  </TableHead>
+                  <TableHead className="w-[80px] font-bold text-slate-600 uppercase text-[10px] tracking-wider">
+                    Gender
+                  </TableHead>
+                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">
+                    Department
+                  </TableHead>
+                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">
+                    Chief Complaints
+                  </TableHead>
+                  <TableHead className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">
+                    Medicines
+                  </TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRecords.length > 0 ? (
                   filteredRecords.map((record, index) => (
-                    <TableRow 
-                      key={record.id || index} 
+                    <TableRow
+                      key={record.id || index}
                       className="hover:bg-primary/5 transition-colors cursor-default border-slate-100"
                     >
-                      <TableCell className="font-medium whitespace-nowrap text-slate-500 text-xs">{record.date}</TableCell>
-                      <TableCell className="text-slate-400 whitespace-nowrap text-xs">{record.time}</TableCell>
-                      <TableCell className="font-bold text-slate-700">{record.name}</TableCell>
-                      <TableCell className="text-xs text-slate-500 font-medium">{record.email}</TableCell>
-                      <TableCell className="text-center text-slate-600">{record.age}</TableCell>
-                      <TableCell className="text-slate-500 text-xs">{record.gender}</TableCell>
+                      <TableCell className="font-medium whitespace-nowrap text-slate-500 text-xs">
+                        {record.date}
+                      </TableCell>
+                      <TableCell className="text-slate-400 whitespace-nowrap text-xs">
+                        {record.time}
+                      </TableCell>
+                      <TableCell className="font-bold text-slate-700">
+                        {record.name}
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-500 font-medium">
+                        {record.email}
+                      </TableCell>
+                      <TableCell className="text-center text-slate-600">
+                        {record.age}
+                      </TableCell>
+                      <TableCell className="text-slate-500 text-xs">
+                        {record.gender}
+                      </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="font-bold text-[10px] uppercase bg-slate-100 text-slate-600 border-none">
+                        <Badge
+                          variant="secondary"
+                          className="font-bold text-[10px] uppercase bg-slate-100 text-slate-600 border-none"
+                        >
                           {record.department}
                         </Badge>
                       </TableCell>
                       <TableCell className="max-w-[200px]">
-                        <p className="text-xs text-slate-500 line-clamp-2 italic" title={record.chiefComplaints}>
+                        <p
+                          className="text-xs text-slate-500 line-clamp-2 italic"
+                          title={record.chiefComplaints}
+                        >
                           {record.chiefComplaints}
                         </p>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {record.medicineTaken?.map((m: any, i: number) => (
-                            <span key={i} className="inline-flex items-center rounded-sm bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-slate-700 border border-primary/20">
+                            <span
+                              key={i}
+                              className="inline-flex items-center rounded-sm bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-slate-700 border border-primary/20"
+                            >
                               {m.name} ({m.quantity})
                             </span>
                           ))}
                         </div>
                       </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeRecord(record.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={9} className="h-48 text-center text-slate-400 font-medium italic">
-                      {loading ? (
-                        "Loading records..."
-                      ) : searchTerm ? "No records found matching your search." : "No issuance records logged yet."}
+                    <TableCell
+                      colSpan={9}
+                      className="h-48 text-center text-slate-400 font-medium italic"
+                    >
+                      {loading
+                        ? "Loading records..."
+                        : searchTerm
+                          ? "No records found matching your search."
+                          : "No issuance records logged yet."}
                     </TableCell>
                   </TableRow>
                 )}

@@ -1,36 +1,42 @@
-
 "use client";
 
+import { supabase } from "@/lib/supabase";
 import { useState, useMemo, useEffect } from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription 
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  UserPlus, 
-  ShieldCheck, 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  UserPlus,
+  ShieldCheck,
   Trash2,
   ShieldAlert,
   Lock,
   Users as UsersIcon,
   Eye,
   EyeOff,
-  Loader2
+  Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -62,15 +68,40 @@ export default function UserManagementPage() {
   });
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("medtrack_admins") || "[]");
-    setAdmins(stored);
-    setLoading(false);
-  }, []);
+    const loadAdmins = async () => {
+      const { data, error } = await supabase
+        .from("admins")
+        .select("*")
+        .order("added_at", { ascending: false });
 
-  const saveAdmins = (updated: any[]) => {
-    localStorage.setItem("medtrack_admins", JSON.stringify(updated));
-    setAdmins(updated);
-  };
+      if (error) {
+        toast({
+          title: "Database Error",
+          description: error.message,
+          variant: "destructive",
+        });
+
+        setLoading(false);
+        return;
+      }
+
+      setAdmins(
+        (data || []).map((admin) => ({
+          id: admin.id,
+          userId: admin.user_id,
+          fullName: admin.full_name,
+          email: admin.email,
+          role: admin.role,
+          status: admin.status,
+          addedAt: admin.added_at,
+        })),
+      );
+
+      setLoading(false);
+    };
+
+    loadAdmins();
+  }, [toast]);
 
   const handleAddAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,35 +110,98 @@ export default function UserManagementPage() {
       toast({
         title: "Unauthorized Domain",
         description: `Only users with @${ORG_DOMAIN} emails can be registered as system admins.`,
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     setIsSubmitting(true);
-    const newAdmin = {
-      ...formData,
-      id: Math.random().toString(36).substr(2, 9),
-      status: "Active",
-      addedAt: new Date().toISOString(),
-    };
 
-    saveAdmins([...admins, newAdmin]);
+    // Create Auth User
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+    });
+
+    if (authError) {
+      toast({
+        title: "Authentication Error",
+        description: authError.message,
+        variant: "destructive",
+      });
+
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Create Admin Record
+    const { data, error } = await supabase
+      .from("admins")
+      .insert({
+        user_id: authData.user?.id,
+        full_name: formData.fullName,
+        email: formData.email,
+        role: formData.role,
+        status: "Active",
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast({
+        title: "Database Error",
+        description: error.message,
+        variant: "destructive",
+      });
+
+      setIsSubmitting(false);
+      return;
+    }
+
+    setAdmins((prev) => [
+      {
+        id: data.id,
+        userId: data.user_id,
+        fullName: data.full_name,
+        email: data.email,
+        role: data.role,
+        status: data.status,
+        addedAt: data.added_at,
+      },
+      ...prev,
+    ]);
 
     toast({
       title: "Admin Registered",
       description: `${formData.fullName} has been granted dashboard access.`,
     });
 
-    setFormData({ fullName: "", email: "", password: "", role: "Clinic Staff" });
-    setIsDialogOpen(false);
+    setFormData({
+      fullName: "",
+      email: "",
+      password: "",
+      role: "Clinic Staff",
+    });
+
     setShowPassword(false);
+    setIsDialogOpen(false);
     setIsSubmitting(false);
   };
 
-  const removeAdmin = (id: string) => {
-    const updated = admins.filter(a => a.id !== id);
-    saveAdmins(updated);
+  const removeAdmin = async (id: string) => {
+    const { error } = await supabase.from("admins").delete().eq("id", id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAdmins((prev) => prev.filter((admin) => admin.id !== id));
+
     toast({
       title: "Access Revoked",
       description: "User has been removed from the system.",
@@ -118,10 +212,14 @@ export default function UserManagementPage() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline tracking-tight text-accent uppercase">Access Control</h1>
-          <p className="text-muted-foreground mt-1">Manage personnel authorized to access the clinical dashboard.</p>
+          <h1 className="text-3xl font-bold font-headline tracking-tight text-accent uppercase">
+            Access Control
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Manage personnel authorized to access the clinical dashboard.
+          </p>
         </div>
-        
+
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2 bg-accent text-primary hover:bg-accent/90 font-bold uppercase text-[10px]">
@@ -131,41 +229,55 @@ export default function UserManagementPage() {
           <DialogContent className="sm:max-w-[425px]">
             <form onSubmit={handleAddAdmin}>
               <DialogHeader>
-                <DialogTitle className="font-headline text-accent uppercase">Register System Admin</DialogTitle>
+                <DialogTitle className="font-headline text-accent uppercase">
+                  Register System Admin
+                </DialogTitle>
                 <DialogDescription>
                   Provide clinical credentials for dashboard access.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-slate-400">Full Name</Label>
-                  <Input 
-                    placeholder="Enter full name" 
+                  <Label className="text-[10px] font-black uppercase text-slate-400">
+                    Full Name
+                  </Label>
+                  <Input
+                    placeholder="Enter full name"
                     value={formData.fullName}
-                    onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, fullName: e.target.value })
+                    }
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-slate-400">Work Email (@{ORG_DOMAIN})</Label>
-                  <Input 
-                    type="email" 
-                    placeholder={`admin@${ORG_DOMAIN}`} 
+                  <Label className="text-[10px] font-black uppercase text-slate-400">
+                    Work Email (@{ORG_DOMAIN})
+                  </Label>
+                  <Input
+                    type="email"
+                    placeholder={`admin@${ORG_DOMAIN}`}
                     value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-slate-400">Login Password</Label>
+                  <Label className="text-[10px] font-black uppercase text-slate-400">
+                    Login Password
+                  </Label>
                   <div className="relative">
                     <Lock className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input 
+                    <Input
                       type={showPassword ? "text" : "password"}
                       className="pl-9 pr-10"
-                      placeholder="Assign secure password" 
+                      placeholder="Assign secure password"
                       value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
                       required
                     />
                     <Button
@@ -175,13 +287,24 @@ export default function UserManagementPage() {
                       className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-slate-400">Permission Role</Label>
-                  <Select value={formData.role} onValueChange={(val) => setFormData({...formData, role: val})}>
+                  <Label className="text-[10px] font-black uppercase text-slate-400">
+                    Permission Role
+                  </Label>
+                  <Select
+                    value={formData.role}
+                    onValueChange={(val) =>
+                      setFormData({ ...formData, role: val })
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Role" />
                     </SelectTrigger>
@@ -194,8 +317,16 @@ export default function UserManagementPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" className="w-full bg-accent text-primary font-black uppercase tracking-widest" disabled={isSubmitting}>
-                  {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Register & Grant Access"}
+                <Button
+                  type="submit"
+                  className="w-full bg-accent text-primary font-black uppercase tracking-widest"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Register & Grant Access"
+                  )}
                 </Button>
               </DialogFooter>
             </form>
@@ -207,15 +338,25 @@ export default function UserManagementPage() {
         <Card className="md:col-span-2 border-none shadow-sm overflow-hidden bg-white">
           <div className="p-4 border-b flex items-center gap-2">
             <UsersIcon className="h-5 w-5 text-accent" />
-            <h3 className="font-bold text-accent uppercase text-xs">Authorized Dashboard Users</h3>
+            <h3 className="font-bold text-accent uppercase text-xs">
+              Authorized Dashboard Users
+            </h3>
           </div>
           <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
-                <TableHead className="font-bold text-slate-600 uppercase text-[10px]">Identity</TableHead>
-                <TableHead className="font-bold text-slate-600 uppercase text-[10px]">Role</TableHead>
-                <TableHead className="font-bold text-slate-600 uppercase text-[10px] text-center">Status</TableHead>
-                <TableHead className="font-bold text-slate-600 uppercase text-[10px] text-right">Actions</TableHead>
+                <TableHead className="font-bold text-slate-600 uppercase text-[10px]">
+                  Identity
+                </TableHead>
+                <TableHead className="font-bold text-slate-600 uppercase text-[10px]">
+                  Role
+                </TableHead>
+                <TableHead className="font-bold text-slate-600 uppercase text-[10px] text-center">
+                  Status
+                </TableHead>
+                <TableHead className="font-bold text-slate-600 uppercase text-[10px] text-right">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -224,12 +365,19 @@ export default function UserManagementPage() {
                   <TableRow key={admin.id}>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-bold text-slate-800">{admin.fullName}</span>
-                        <span className="text-xs text-muted-foreground">{admin.email}</span>
+                        <span className="font-bold text-slate-800">
+                          {admin.fullName}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {admin.email}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="font-bold text-[10px] uppercase border-accent/20 text-accent">
+                      <Badge
+                        variant="outline"
+                        className="font-bold text-[10px] uppercase border-accent/20 text-accent"
+                      >
                         {admin.role}
                       </Badge>
                     </TableCell>
@@ -239,7 +387,11 @@ export default function UserManagementPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => removeAdmin(admin.id)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeAdmin(admin.id)}
+                      >
                         <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
                       </Button>
                     </TableCell>
@@ -247,8 +399,13 @@ export default function UserManagementPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
-                    {loading ? "Accessing Authorization List..." : "No administrators registered."}
+                  <TableCell
+                    colSpan={4}
+                    className="h-32 text-center text-muted-foreground"
+                  >
+                    {loading
+                      ? "Accessing Authorization List..."
+                      : "No administrators registered."}
                   </TableCell>
                 </TableRow>
               )}
@@ -260,20 +417,26 @@ export default function UserManagementPage() {
           <Card className="border-none shadow-sm bg-accent text-primary p-6">
             <div className="flex items-center gap-2 mb-4">
               <ShieldCheck className="h-6 w-6" />
-              <h3 className="text-lg font-black uppercase tracking-tight">Security Protocol</h3>
+              <h3 className="text-lg font-black uppercase tracking-tight">
+                Security Protocol
+              </h3>
             </div>
             <p className="text-xs font-medium opacity-90 leading-relaxed uppercase tracking-wider">
-              Access is restricted to verified organization personnel. Ensure one Super Admin remains registered at all times.
+              Access is restricted to verified organization personnel. Ensure
+              one Super Admin remains registered at all times.
             </p>
           </Card>
 
           <Card className="border-none shadow-sm border-l-4 border-l-amber-500 bg-amber-50 p-6">
             <div className="flex items-center gap-2 mb-2 text-amber-700">
               <ShieldAlert className="h-4 w-4" />
-              <h4 className="text-xs font-black uppercase tracking-widest">Management Policy</h4>
+              <h4 className="text-xs font-black uppercase tracking-widest">
+                Management Policy
+              </h4>
             </div>
             <p className="text-[10px] text-amber-800/80 font-bold uppercase leading-relaxed tracking-widest">
-              DashBoard accounts are for administrative staff only. Do not add general employees here; use the Clinical Directory instead.
+              DashBoard accounts are for administrative staff only. Do not add
+              general employees here; use the Clinical Directory instead.
             </p>
           </Card>
         </div>
