@@ -1,0 +1,178 @@
+{
+  "entities": {
+    "Issuance": {
+      "title": "Medicine Issuance Record",
+      "description": "A record of medicine distributed to a patient in the facility.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Employee full name"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Employee work email"
+        },
+        "age": {
+          "type": "number",
+          "description": "Employee age"
+        },
+        "gender": {
+          "type": "string",
+          "description": "Employee gender"
+        },
+        "department": {
+          "type": "string",
+          "description": "BPO Department (e.g., NAM, APAC, IT)"
+        },
+        "chiefComplaints": {
+          "type": "string",
+          "description": "Symptoms or complaints"
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date of issuance (YYYY-MM-DD)"
+        },
+        "time": {
+          "type": "string",
+          "description": "Time of issuance (HH:MM)"
+        },
+        "medicineTaken": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "quantity": {
+                "type": "number"
+              },
+              "dosage": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "name",
+        "email",
+        "age",
+        "gender",
+        "department",
+        "chiefComplaints",
+        "medicineTaken",
+        "createdAt"
+      ]
+    },
+    "AdminUser": {
+      "title": "Administrator",
+      "description": "A user with access to the MedTrack Admin Dashboard.",
+      "type": "object",
+      "properties": {
+        "fullName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "password": {
+          "type": "string",
+          "description": "Login password for the administrator"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "Super Admin",
+            "Clinic Staff",
+            "HR Viewer"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Active",
+            "Inactive"
+          ]
+        },
+        "addedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "fullName",
+        "email",
+        "password",
+        "role",
+        "status",
+        "addedAt"
+      ]
+    },
+    "Employee": {
+      "title": "Verified Employee",
+      "description": "An employee authorized to use clinic services.",
+      "type": "object",
+      "properties": {
+        "fullName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "department": {
+          "type": "string"
+        },
+        "employeeId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Active",
+            "Inactive"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "fullName",
+        "email",
+        "department",
+        "status",
+        "createdAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password"
+    ]
+  },
+  "firestore": {
+    "/issuances/{issuanceId}": {
+      "schema": "Issuance",
+      "description": "Collection of medicine issuance records for the company clinic."
+    },
+    "/admins/{adminId}": {
+      "schema": "AdminUser",
+      "description": "Collection of authorized administrators for the clinic system."
+    },
+    "/employees/{employeeId}": {
+      "schema": "Employee",
+      "description": "Master list of verified company personnel."
+    }
+  }
+}
