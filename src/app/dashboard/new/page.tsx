@@ -51,14 +51,18 @@ const ORG_DOMAIN = "callboxinc.com";
 export default function PublicPortalPage() {
   const { toast } = useToast();
   const [showReceipt, setShowReceipt] = useState(false);
-  const [submittedRecord, setSubmittedRecord] = useState<IssuanceRecord | null>(null);
+  const [submittedRecord, setSubmittedRecord] = useState<IssuanceRecord | null>(
+    null,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [medicineDialogOpen, setMedicineDialogOpen] = useState(false);
   const [medicineSearch, setMedicineSearch] = useState("");
-  const [selectedMedicineIndex, setSelectedMedicineIndex] = useState<number | null>(null);
+  const [selectedMedicineIndex, setSelectedMedicineIndex] = useState<
+    number | null
+  >(null);
 
   const [formData, setFormData] = useState<IssuanceFormData>({
     name: "",
@@ -74,7 +78,9 @@ export default function PublicPortalPage() {
       medicine_id: "",
       medicine_name: "",
       quantity: 1,
+      minimum_stock: 1,
       dosage: "",
+      name: "",
     },
   ]);
 
@@ -127,7 +133,9 @@ export default function PublicPortalPage() {
         medicine_id: "",
         medicine_name: "",
         quantity: 1,
+        minimum_stock: 1,
         dosage: "",
+        name: "",
       },
     ]);
   };
@@ -151,7 +159,7 @@ export default function PublicPortalPage() {
 
   const loadMedicines = async () => {
     const { data, error } = await supabase
-      .from<MedicineOption>("medicines")
+      .from<"medicines", MedicineOption>("medicines")
       .select("*")
       .order("medicine_name");
 
@@ -249,8 +257,8 @@ export default function PublicPortalPage() {
         chiefComplaints: data.chief_complaints,
         medicineTaken: data.medicine_taken,
         createdAt: data.created_at,
-        date: new Date(data.created_at).toLocaleDateString(),
-        time: new Date(data.created_at).toLocaleTimeString(),
+        date: data.time,
+        time: data.time,
       };
 
       setSubmittedRecord(record);
@@ -303,7 +311,9 @@ export default function PublicPortalPage() {
                 medicine_id: "",
                 medicine_name: "",
                 quantity: 1,
+                minimum_stock: 1,
                 dosage: "",
+                name: "",
               },
             ]);
             setIsVerified(null);
@@ -638,7 +648,8 @@ export default function PublicPortalPage() {
                         if (
                           medicine.quantity === null ||
                           medicine.quantity === undefined ||
-                          (typeof medicine.quantity === "string" && medicine.quantity === "")
+                          (typeof medicine.quantity === "string" &&
+                            medicine.quantity === "")
                         ) {
                           updateMedicine(index, "quantity", 1);
                         }
@@ -656,9 +667,9 @@ export default function PublicPortalPage() {
                       const selectedMedicine = medicineOptions.find(
                         (m) => m.id === medicine.medicine_id,
                       );
-
-                      const databaseDosage = selectedMedicine?.dosage || "";
-
+                      
+                      const databaseDosage = typeof selectedMedicine?.dosage === "string" 
+                      ? selectedMedicine.dosage: "";
                       return (
                         <div className="space-y-1">
                           <div className="flex gap-2">

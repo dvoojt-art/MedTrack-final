@@ -3,6 +3,7 @@ export interface MedicineItem {
   medicine_id: string;
   medicine_name: string;
   quantity: number;
+  minimum_stock: number;
   dosage: string;
 }
 
@@ -19,6 +20,8 @@ export interface MedicineOption {
   id: string;
   medicine_name: string;
   current_stock: number;
+  minimum_stock: number;
+  category: string;
   [key: string]: unknown;
 }
 

@@ -34,7 +34,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
-, "electron/main.cjs"  ],
+, "electron/main.cjs", "next.config.js"  ],
   "exclude": [
     "node_modules"
   ]

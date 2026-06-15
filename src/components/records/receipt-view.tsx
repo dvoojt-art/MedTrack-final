@@ -31,13 +31,9 @@ export function ReceiptView({ record, onClose }: ReceiptViewProps) {
     day: "2-digit",
   }).format(isValidDate ? issuedDate : new Date());
 
-  const formattedTime = new Intl.DateTimeFormat("en-PH", {
-    timeZone: "Asia/Manila",
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  }).format(isValidDate ? issuedDate : new Date());
+  const formattedTime = (
+    isValidDate ? issuedDate : new Date()
+  ).toLocaleTimeString();
 
   useEffect(() => {
     // Prevent hydration mismatch by generating client-side
@@ -68,12 +64,7 @@ export function ReceiptView({ record, onClose }: ReceiptViewProps) {
           <span className="font-bold text-right text-slate-700">
             {formattedDate}
           </span>
-          <span className="text-slate-500 font-bold uppercase text-[10px]">
-            Time:
-          </span>
-          <span className="font-bold text-right text-slate-700">
-            {formattedTime}
-          </span>
+
           <span className="text-slate-500 font-bold uppercase text-[10px]">
             Patient:
           </span>

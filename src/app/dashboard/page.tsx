@@ -382,8 +382,8 @@ export default function DashboardOverview() {
               )}
             </div>
             {records.length > 0 && (
-              <Button variant="link" asChild className="mt-4 p-0">
-                <Link href="/dashboard/records">View all logs</Link>
+              <Button variant="link" asChild className="mt-4 p-0 text-primary">
+                <Link href="/dashboard/audit-logs">View Audit Logs →</Link>
               </Button>
             )}
           </CardContent>
