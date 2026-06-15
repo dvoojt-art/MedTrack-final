@@ -24,9 +24,12 @@ import {
   Lightbulb,
   Package2,
   AlertTriangle,
+  Info,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { differenceInDays } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 type Medicine = {
@@ -45,6 +48,7 @@ export default function DashboardOverview() {
   const [isMounted, setIsMounted] = useState(false);
   const { toast } = useToast();
   const [criticalItems, setCriticalItems] = useState<InventoryDbRow[]>([]);
+  const [lowStockItems, setLowStockItems] = useState<InventoryDbRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [aiSummary, setAiSummary] = useState("");
   const [medicines, setMedicines] = useState<InventoryDbRow[]>([]);
@@ -81,8 +85,15 @@ export default function DashboardOverview() {
         const medicines = (medicinesData || []) as InventoryDbRow[];
 
         // Detect critical stock
-        const lowStocks = medicines.filter(
+        const criticalStocks = medicines.filter(
           (item) => item.current_stock <= item.minimum_stock,
+        );
+
+        // Detect low stock (e.g., within 50% of minimum)
+        const lowStocks = medicines.filter(
+          (item) =>
+            item.current_stock > item.minimum_stock &&
+            item.current_stock <= item.minimum_stock * 1.5,
         );
 
         // Load AI summary
@@ -98,7 +109,8 @@ export default function DashboardOverview() {
         setRecords(issuances);
         setAdmins(admins);
         setMedicines(medicines);
-        setCriticalItems(lowStocks);
+        setCriticalItems(criticalStocks);
+        setLowStockItems(lowStocks);
         setAiSummary(parsedInsights?.summary || "");
       } catch (err) {
         console.error("Dashboard Load Error:", err);
@@ -116,6 +128,46 @@ export default function DashboardOverview() {
     loadDashboardData();
   }, []);
 
+  const lowStockItemsWithSupply = useMemo(() => {
+    if (lowStockItems.length === 0 || records.length === 0) {
+      return lowStockItems.map((item) => ({ ...item, daysLeft: null }));
+    }
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const recentRecords = records.filter(
+      (record) => new Date(record.created_at) >= thirtyDaysAgo,
+    );
+
+    if (recentRecords.length === 0) {
+      return lowStockItems.map((item) => ({ ...item, daysLeft: null }));
+    }
+
+    const earliestRecordDate = recentRecords.reduce((earliest, record) => {
+      const recordDate = new Date(record.created_at);
+      return recordDate < earliest ? recordDate : earliest;
+    }, new Date());
+
+    const daysInPeriod = Math.max(1, differenceInDays(new Date(), earliestRecordDate));
+
+    return lowStockItems.map((item) => {
+      const totalIssued = recentRecords.reduce((sum, record) => {
+        const med = record.medicine_taken?.find(
+          (m) => m.medicine_name === item.medicine_name,
+        );
+        return sum + (med ? med.quantity : 0);
+      }, 0);
+
+      if (totalIssued === 0) {
+        return { ...item, daysLeft: null }; // No recent usage
+      }
+
+      const averageDailyUsage = totalIssued / daysInPeriod;
+      const daysLeft = Math.floor(item.current_stock / averageDailyUsage);
+      return { ...item, daysLeft };
+    });
+  }, [lowStockItems, records]);
   const stats = useMemo(() => {
     if (!isMounted)
       return {
@@ -142,13 +194,41 @@ export default function DashboardOverview() {
     };
   }, [records, isMounted]);
 
-  const recentRecords = useMemo(() => {
-    return [...records]
-      .sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      )
-      .slice(0, 5);
+  const groupedRecentRecords = useMemo(() => {
+    const sortedRecords = [...records].sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() -
+        new Date(a.created_at).getTime(),
+    ).slice(0, 3); // Show only the 3 most recent records
+    
+    const groups = sortedRecords.reduce(
+      (acc, record) => {
+        const recordDate = new Date(record.created_at);
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        let dateKey = recordDate.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+
+        if (recordDate.toDateString() === today.toDateString()) {
+          dateKey = "Today";
+        } else if (recordDate.toDateString() === yesterday.toDateString()) {
+          dateKey = "Yesterday";
+        }
+
+        if (!acc[dateKey]) {
+          acc[dateKey] = [];
+        }
+        acc[dateKey].push(record);
+        return acc;
+      },
+      {} as Record<string, IssuanceDbRow[]>,
+    );
+    return groups;
   }, [records]);
 
   if (!isMounted) return null;
@@ -242,23 +322,55 @@ export default function DashboardOverview() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-8">
-              {recentRecords.length > 0 ? (
-                recentRecords.map((record) => (
-                  <div
-                    key={record.id}
-                    className="flex items-center rounded-xl p-2 transition-all duration-300 hover:bg-slate-50 hover:translate-x-1"
-                  >
-                    <div className="ml-4 space-y-1">
-                      <p className="text-sm font-medium leading-none text-accent">
-                        {record.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {record.department}
-                      </p>
-                    </div>
-                    <div className="ml-auto font-medium text-xs">
-                      <Badge variant="outline">{record.time}</Badge>
+            <div className="space-y-6">
+              {Object.keys(groupedRecentRecords).length > 0 ? (
+                Object.entries(groupedRecentRecords).map(([date, dayRecords]) => (
+                  <div key={date}>
+                    <h4 className="text-sm font-semibold text-muted-foreground mb-3 sticky top-0 bg-background/80 backdrop-blur-sm py-2">
+                      {date}
+                    </h4>
+                    <div className="space-y-4">
+                      {dayRecords.map((record) => {
+                        const isNew =
+                          new Date().getTime() -
+                            new Date(record.created_at).getTime() <
+                          10 * 60 * 1000; // 10 minutes
+
+                        return (
+                          <div
+                            key={record.id}
+                            className="flex items-start gap-4 rounded-lg border p-3 transition-all hover:bg-muted/50"
+                          >
+                            <div className="flex-1 space-y-1">
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium leading-none text-accent flex items-center gap-2">
+                                  {record.name}
+                                  {isNew && (
+                                    <Badge className="animate-pulse bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 text-[9px] h-4 px-2">
+                                      Just In
+                                    </Badge>
+                                  )}
+                                </p>
+                                <Badge variant="outline" className="text-xs">
+                                  {record.time}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                {record.department}
+                                <Building2 className="h-3 w-3" />
+                              </p>
+                              <div className="pt-2 text-xs text-muted-foreground">
+                                {record.medicine_taken?.map((med) => (
+                                  <div key={med.medicine_name} className="flex justify-between items-center">
+                                    <span>- {med.medicine_name}</span>
+                                    <span className="font-mono text-accent">{med.quantity} pcs</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ))
@@ -269,7 +381,7 @@ export default function DashboardOverview() {
                 </div>
               )}
             </div>
-            {recentRecords.length > 0 && (
+            {records.length > 0 && (
               <Button variant="link" asChild className="mt-4 p-0">
                 <Link href="/dashboard/records">View all logs</Link>
               </Button>
@@ -294,7 +406,7 @@ export default function DashboardOverview() {
             )}
 
             {/* Healthy */}
-            {!loading && criticalItems.length === 0 && (
+            {!loading && criticalItems.length === 0 && lowStockItems.length === 0 && (
               <div className="rounded-2xl border border-emerald-200 bg-linear-to-br from-emerald-50 to-white p-6 shadow-sm">
                 <div className="flex items-center gap-4">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
@@ -309,6 +421,56 @@ export default function DashboardOverview() {
                     <p className="text-sm text-muted-foreground mt-1">
                       All medicines are currently above minimum stock levels.
                     </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Low Stocks */}
+            {!loading && lowStockItemsWithSupply.length > 0 && (
+              <div className="rounded-2xl border border-amber-300 bg-linear-to-br from-amber-50 to-white p-6 shadow-sm">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+                    <Info className="h-7 w-7 text-amber-600" />
+                  </div>
+
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-amber-700">
+                      {lowStockItemsWithSupply.length} Low Stock Item
+                      {lowStockItemsWithSupply.length > 1 ? "s" : ""}
+                    </h4>
+
+                    <p className="text-sm text-muted-foreground mt-1">
+                      These items are approaching their minimum stock level.
+                    </p>
+
+                    <div className="mt-4 space-y-2">
+                      {lowStockItemsWithSupply.slice(0, 3).map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between rounded-xl border bg-white px-3 py-2 transition-all duration-300 hover:border-amber-300 hover:shadow-md hover:-translate-y-0.5"
+                        >
+                          <div>
+                            <span className="font-medium text-sm">
+                              {item.medicine_name}
+                            </span>
+                            {item.daysLeft !== null && (
+                              <p className="text-xs text-muted-foreground">
+                                ~{item.daysLeft} day
+                                {item.daysLeft !== 1 ? "s" : ""} of supply left
+                              </p>
+                            )}
+                          </div>
+
+                          <span className="text-sm font-bold text-amber-600 shrink-0 pl-2">
+                            {item.current_stock}{" "}
+                            <span className="text-xs font-normal text-muted-foreground">
+                              left
+                            </span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
