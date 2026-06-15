@@ -65,7 +65,7 @@ export default function InsightsPage() {
   const loadIssuanceRecords = async () => {
     try {
       const { data, error } = await supabase
-        .from<IssuanceDbRow>("issuances")
+        .from<"issuances",IssuanceDbRow>("issuances")
         .select("*")
         .order("created_at", { ascending: false });
 

@@ -199,7 +199,7 @@ export default function DashboardOverview() {
       (a, b) =>
         new Date(b.created_at).getTime() -
         new Date(a.created_at).getTime(),
-    ).slice(0, 3); // Show only the 3 most recent records
+    ).slice(0, 4); // Show only the 3 most recent records
     
     const groups = sortedRecords.reduce(
       (acc, record) => {

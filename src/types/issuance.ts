@@ -1,4 +1,5 @@
 export interface MedicineItem {
+  name: string;
   medicine_id: string;
   medicine_name: string;
   quantity: number;
